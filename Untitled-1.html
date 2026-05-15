@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#0f172a] text-white">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-6">
+  <div class="bg-gray-900 p-6 rounded-xl shadow-md max-w-md mx-auto">
+    <h2 class="text-xl font-semibold mb-4 text-blue-300">🔔 Notification Settings</h2>
+
+    <form class="space-y-4">
+      <div class="flex items-center justify-between">
+        <span>Email Notifications</span>
+        <label class="inline-flex relative items-center cursor-pointer">
+          <input type="checkbox" class="sr-only peer" checked>
+          <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-gray-800 peer-checked:bg-blue-600"></div>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span>Push Notifications</span>
+        <label class="inline-flex relative items-center cursor-pointer">
+          <input type="checkbox" class="sr-only peer">
+          <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-gray-800 peer-checked:bg-blue-600"></div>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span>SMS Alerts</span>
+        <label class="inline-flex relative items-center cursor-pointer">
+          <input type="checkbox" class="sr-only peer" checked>
+          <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-gray-800 peer-checked:bg-blue-600"></div>
+        </label>
+      </div>
+
+      <button type="submit" class="bg-blue-500 w-full py-2 rounded hover:bg-blue-600">Update Notifications</button>
+    </form>
+  </div>
+</body>
+</html>

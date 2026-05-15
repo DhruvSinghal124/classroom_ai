@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#0f172a] text-white">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account Settings – Classroom.AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    }
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .input-focus {
+      transition: all 0.3s ease;
+    }
+    .input-focus:focus {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+    .save-success {
+      animation: saveSuccess 0.5s ease-in-out;
+    }
+    @keyframes saveSuccess {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .profile-avatar {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+    .notification-toast {
+      animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .changed {
+      border-color: #fbbf24 !important;
+      box-shadow: 0 0 0 1px #fbbf24;
+    }
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body class="bg-[#0f172a] text-white min-h-screen px-4 py-8 relative overflow-x-hidden">
+
+  <!-- Animated Background Elements -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+    <div class="absolute top-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="notification" class="fixed top-4 right-4 z-50 hidden">
+    <div class="notification-toast bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+      <span id="notification-text">Changes saved successfully!</span>
+    </div>
+  </div>
+
+  <!-- Back Button -->
+  <a href="settings.html" class="relative z-10 inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-lg font-medium ml-4 mb-8 transition-all duration-300 hover:translate-x-1">
+    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    Back to Settings
+  </a>
+
+  <!-- Main Container -->
+  <div class="relative z-10 max-w-4xl mx-auto">
+    
+    <!-- Header Section -->
+    <div class="glass-effect p-8 rounded-2xl shadow-2xl mb-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="profile-avatar w-16 h-16 rounded-full flex items-center justify-center">
+            <i data-lucide="user" class="w-8 h-8 text-white"></i>
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Account Settings
+            </h1>
+            <p class="text-gray-400 mt-1">Manage your personal information and preferences</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-gray-400">Last Updated</p>
+          <p id="lastUpdated" class="text-blue-400 font-medium">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Grid -->
+    <div class="grid lg:grid-cols-3 gap-8">
+      
+      <!-- Personal Information -->
+      <div class="lg:col-span-2 glass-effect p-8 rounded-2xl shadow-2xl">
+        <div class="flex items-center gap-3 mb-6">
+          <i data-lucide="user-circle" class="w-6 h-6 text-blue-400"></i>
+          <h2 class="text-xl font-bold text-blue-300">Personal Information</h2>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Display Name -->
+          <div class="group">
+            <label for="name" class="block text-sm font-medium mb-2 text-gray-300 group-hover:text-blue-400 transition-colors">
+              Display Name
+            </label>
+            <div class="relative">
+              <input id="name" type="text" placeholder="Enter your display name"
+                class="input-focus w-full p-4 rounded-xl bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent" />
+              <div class="absolute right-3 top-4">
+                <i data-lucide="edit-3" class="w-4 h-4 text-gray-500"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Username -->
+          <div class="group">
+            <label for="username" class="block text-sm font-medium mb-2 text-gray-300 group-hover:text-blue-400 transition-colors">
+              Username
+            </label>
+            <div class="relative">
+              <input id="username" type="text" placeholder="Enter your username"
+                class="input-focus w-full p-4 rounded-xl bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent" />
+              <div class="absolute right-3 top-4">
+                <i data-lucide="at-sign" class="w-4 h-4 text-gray-500"></i>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">This will be your unique identifier</p>
+          </div>
+
+          <!-- Email -->
+          <div class="group">
+            <label for="email" class="block text-sm font-medium mb-2 text-gray-300 group-hover:text-blue-400 transition-colors">
+              Email Address
+            </label>
+            <div class="relative">
+              <input id="email" type="email" placeholder="Enter your email address"
+                class="input-focus w-full p-4 rounded-xl bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent" />
+              <div class="absolute right-3 top-4">
+                <i data-lucide="mail" class="w-4 h-4 text-gray-500"></i>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <span id="emailStatus" class="text-xs px-2 py-1 rounded-full bg-green-600 text-white">Verified</span>
+            </div>
+          </div>
+
+          <!-- Bio -->
+          <div class="group">
+            <label for="bio" class="block text-sm font-medium mb-2 text-gray-300 group-hover:text-blue-400 transition-colors">
+              Bio
+            </label>
+            <textarea id="bio" rows="3" placeholder="Tell us about yourself..."
+              class="input-focus w-full p-4 rounded-xl bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"></textarea>
+            <p class="text-xs text-gray-500 mt-1"><span id="bioCount">0</span>/150 characters</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preferences & Security -->
+      <div class="space-y-8">
+        
+        <!-- Preferences Card -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="settings" class="w-6 h-6 text-purple-400"></i>
+            <h3 class="text-lg font-bold text-purple-300">Preferences</h3>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Dark Mode Toggle -->
+            <div class="flex items-center justify-between p-3 rounded-lg hover:bg-[#0f172a] transition-colors">
+              <div class="flex items-center gap-3">
+                <i data-lucide="moon" class="w-5 h-5 text-blue-400"></i>
+                <div>
+                  <p class="font-medium">Dark Mode</p>
+                  <p class="text-xs text-gray-400">Enable dark theme</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="darkMode" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+
+            <!-- Notifications Toggle -->
+            <div class="flex items-center justify-between p-3 rounded-lg hover:bg-[#0f172a] transition-colors">
+              <div class="flex items-center gap-3">
+                <i data-lucide="bell" class="w-5 h-5 text-green-400"></i>
+                <div>
+                  <p class="font-medium">Notifications</p>
+                  <p class="text-xs text-gray-400">Email notifications</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="notifications" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+
+            <!-- Auto-save Toggle -->
+            <div class="flex items-center justify-between p-3 rounded-lg hover:bg-[#0f172a] transition-colors">
+              <div class="flex items-center gap-3">
+                <i data-lucide="save" class="w-5 h-5 text-yellow-400"></i>
+                <div>
+                  <p class="font-medium">Auto-save</p>
+                  <p class="text-xs text-gray-400">Save changes automatically</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="autoSave" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security Card -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="shield" class="w-6 h-6 text-red-400"></i>
+            <h3 class="text-lg font-bold text-red-300">Security</h3>
+          </div>
+
+          <div class="space-y-3">
+            <button onclick="changePassword()" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-[#0f172a] transition-colors text-left">
+              <i data-lucide="key" class="w-5 h-5 text-blue-400"></i>
+              <div>
+                <p class="font-medium">Change Password</p>
+                <p class="text-xs text-gray-400">Update your password</p>
+              </div>
+            </button>
+
+            <button onclick="setupTwoFA()" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-[#0f172a] transition-colors text-left">
+              <i data-lucide="smartphone" class="w-5 h-5 text-green-400"></i>
+              <div>
+                <p class="font-medium">Two-Factor Auth</p>
+                <p class="text-xs text-gray-400">Enable 2FA security</p>
+              </div>
+            </button>
+
+            <button onclick="viewLoginActivity()" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-[#0f172a] transition-colors text-left">
+              <i data-lucide="activity" class="w-5 h-5 text-purple-400"></i>
+              <div>
+                <p class="font-medium">Login Activity</p>
+                <p class="text-xs text-gray-400">View recent logins</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-8 flex flex-col sm:flex-row gap-4">
+      <button id="saveButton" class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+        <div class="flex items-center justify-center gap-2">
+          <i data-lucide="save" class="w-5 h-5"></i>
+          <span id="saveText">Save Changes</span>
+        </div>
+      </button>
+      
+      <button id="resetButton" class="px-6 py-4 border border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white font-semibold rounded-xl transition-all duration-300">
+        <div class="flex items-center justify-center gap-2">
+          <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          Reset Changes
+        </div>
+      </button>
+
+      <button onclick="logout()" class="px-6 py-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105">
+        <div class="flex items-center justify-center gap-2">
+          <i data-lucide="log-out" class="w-5 h-5"></i>
+          Logout
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+
+  <!-- Fixed JavaScript with Real-time functionality -->
+  <script>
+    // Initialize variables
+    let userData = {
+      name: '',
+      username: '',
+      email: 'john.doe@example.com',
+      bio: '',
+      darkMode: true,
+      notifications: true,
+      autoSave: true,
+      lastUpdated: new Date().toISOString()
+    };
+
+    let originalData = {};
+    let saveTimeout;
+    let isLoading = false;
+
+    // Get DOM elements
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const usernameInput = document.getElementById("username");
+    const bioInput = document.getElementById("bio");
+    const darkToggle = document.getElementById("darkMode");
+    const notificationsToggle = document.getElementById("notifications");
+    const autoSaveToggle = document.getElementById("autoSave");
+    const saveButton = document.getElementById("saveButton");
+    const resetButton = document.getElementById("resetButton");
+    const saveText = document.getElementById("saveText");
+    const bioCount = document.getElementById("bioCount");
+    const lastUpdated = document.getElementById("lastUpdated");
+    const notification = document.getElementById("notification");
+    const notificationText = document.getElementById("notification-text");
+
+    // Initialize data on page load
+    function initializeData() {
+      // Load from localStorage if available
+      const savedData = localStorage.getItem('userAccountData');
+      if (savedData) {
+        userData = { ...userData, ...JSON.parse(savedData) };
+      }
+      
+      // Populate form with data
+      nameInput.value = userData.name || '';
+      usernameInput.value = userData.username || '';
+      emailInput.value = userData.email || 'john.doe@example.com';
+      bioInput.value = userData.bio || '';
+      darkToggle.checked = userData.darkMode !== false;
+      notificationsToggle.checked = userData.notifications !== false;
+      autoSaveToggle.checked = userData.autoSave !== false;
+      
+      // Update bio counter
+      bioCount.textContent = (userData.bio || '').length;
+      
+      // Update last updated time
+      updateLastUpdated(userData.lastUpdated);
+      
+      // Store original data
+      originalData = { ...userData };
+      updateSaveButton();
+    }
+
+    // Bio character counter
+    bioInput.addEventListener('input', () => {
+      const count = bioInput.value.length;
+      bioCount.textContent = count;
+      
+      if (count > 150) {
+        bioCount.parentElement.classList.add('text-red-400');
+        bioInput.value = bioInput.value.substring(0, 150);
+        bioCount.textContent = 150;
+      } else {
+        bioCount.parentElement.classList.remove('text-red-400');
+      }
+      
+      updateSaveButton();
+      triggerAutoSave();
+    });
+
+    // Show notification function
+    function showNotification(message, type = 'success') {
+      notificationText.textContent = message;
+      
+      // Remove existing classes and add new ones
+      notification.className = `fixed top-4 right-4 z-50 notification-toast px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 text-white`;
+      
+      if (type === 'success') {
+        notification.classList.add('bg-green-600');
+      } else if (type === 'error') {
+        notification.classList.add('bg-red-600');
+      } else if (type === 'info') {
+        notification.classList.add('bg-blue-600');
+      }
+      
+      notification.classList.remove('hidden');
+      
+      setTimeout(() => {
+        notification.classList.add('hidden');
+      }, 3000);
+    }
+
+    // Update last updated time
+    function updateLastUpdated(timestamp = null) {
+      const time = timestamp ? new Date(timestamp) : new Date();
+      lastUpdated.textContent = time.toLocaleString();
+    }
+
+    // Check if data has changed
+    function hasChanges() {
+      const currentData = getCurrentFormData();
+      return JSON.stringify(currentData) !== JSON.stringify(originalData);
+    }
+
+    // Get current form data
+    function getCurrentFormData() {
+      return {
+        name: nameInput.value.trim(),
+        username: usernameInput.value.trim(),
+        email: emailInput.value.trim(),
+        bio: bioInput.value.trim(),
+        darkMode: darkToggle.checked,
+        notifications: notificationsToggle.checked,
+        autoSave: autoSaveToggle.checked
+      };
+    }
+
+    // Update save button state
+    function updateSaveButton() {
+      const hasChangesNow = hasChanges();
+      
+      if (hasChangesNow && !isLoading) {
+        saveButton.classList.remove('opacity-50');
+        saveButton.disabled = false;
+        saveText.textContent = 'Save Changes';
+        
+        // Highlight changed fields
+        highlightChangedFields();
+      } else {
+        saveButton.classList.add('opacity-50');
+        saveButton.disabled = true;
+        saveText.textContent = hasChangesNow ? 'Saving...' : 'No Changes';
+        
+        // Remove highlights
+        removeFieldHighlights();
+      }
+    }
+
+    // Highlight changed fields
+    function highlightChangedFields() {
+      const current = getCurrentFormData();
+      
+      [nameInput, usernameInput, emailInput, bioInput].forEach(input => {
+        const fieldName = input.id;
+        if (current[fieldName] !== originalData[fieldName]) {
+          input.classList.add('changed');
+        } else {
+          input.classList.remove('changed');
+        }
+      });
+    }
+
+    // Remove field highlights
+    function removeFieldHighlights() {
+      [nameInput, usernameInput, emailInput, bioInput].forEach(input => {
+        input.classList.remove('changed');
+      });
+    }
+
+    // Auto-save function
+    function triggerAutoSave() {
+      if (autoSaveToggle.checked && hasChanges() && !isLoading) {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+          saveChanges(true);
+        }, 2000); // Auto-save after 2 seconds of inactivity
+      }
+    }
+
+    // Save changes function
+    async function saveChanges(isAutoSave = false) {
+      if (isLoading) return;
+      
+      isLoading = true;
+      const currentData = getCurrentFormData();
+      
+      // Validation
+      if (!currentData.email) {
+        showNotification('Email is required', 'error');
+        isLoading = false;
+        return;
+      }
+
+      // Show loading state
+      if (!isAutoSave) {
+        saveText.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin mr-2"></i>Saving...';
+        document.body.classList.add('loading');
+        lucide.createIcons();
+      }
+
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Update userData with current form data
+        userData = {
+          ...currentData,
+          lastUpdated: new Date().toISOString()
+        };
+        
+        // Save to localStorage (simulating database)
+        localStorage.setItem('userAccountData', JSON.stringify(userData));
+        
+        // Update original data
+        originalData = { ...userData };
+        
+        // Update UI
+        updateSaveButton();
+        updateLastUpdated(userData.lastUpdated);
+        
+        if (!isAutoSave) {
+          saveText.innerHTML = '<i data-lucide="check" class="w-5 h-5 mr-2"></i>Saved!';
+          lucide.createIcons();
+          
+          setTimeout(() => {
+            saveText.innerHTML = '<i data-lucide="save" class="w-5 h-5 mr-2"></i>Save Changes';
+            lucide.createIcons();
+          }, 2000);
+        }
+
+        showNotification(
+          isAutoSave ? 'Auto-saved successfully' : 'Changes saved successfully!', 
+          'success'
+        );
+        
+      } catch (error) {
+        console.error("Error saving data: ", error);
+        showNotification('Error saving changes. Please try again.', 'error');
+        
+        if (!isAutoSave) {
+          saveText.innerHTML = '<i data-lucide="save" class="w-5 h-5 mr-2"></i>Save Changes';
+          lucide.createIcons();
+        }
+      } finally {
+        isLoading = false;
+        document.body.classList.remove('loading');
+      }
+    }
+
+    // Reset changes function
+    function resetChanges() {
+      if (confirm('Are you sure you want to reset all changes?')) {
+        nameInput.value = originalData.name || '';
+        usernameInput.value = originalData.username || '';
+        emailInput.value = originalData.email || 'john.doe@example.com';
+        bioInput.value = originalData.bio || '';
+        darkToggle.checked = originalData.darkMode !== false;
+        notificationsToggle.checked = originalData.notifications !== false;
+        autoSaveToggle.checked = originalData.autoSave !== false;
+        
+        bioCount.textContent = (originalData.bio || '').length;
+        updateSaveButton();
+        showNotification('Changes reset successfully', 'info');
+      }
+    }
+
+    // Event listeners for inputs
+    const inputs = [nameInput, usernameInput, emailInput];
+    const toggles = [darkToggle, notificationsToggle, autoSaveToggle];
+
+    inputs.forEach(input => {
+      input.addEventListener('input', () => {
+        updateSaveButton();
+        triggerAutoSave();
+      });
+      
+      input.addEventListener('blur', () => {
+        // Trim whitespace on blur
+        input.value = input.value.trim();
+        updateSaveButton();
+        triggerAutoSave();
+      });
+    });
+
+    toggles.forEach(toggle => {
+      toggle.addEventListener('change', () => {
+        updateSaveButton();
+        triggerAutoSave();
+      });
+    });
+
+    // Button event listeners
+    saveButton.addEventListener("click", () => {
+      if (!isLoading && hasChanges()) {
+        saveChanges();
+      }
+    });
+
+    resetButton.addEventListener("click", resetChanges);
+
+    // Security functions
+    window.changePassword = function() {
+      showNotification('Password change feature - Connect with backend', 'info');
+    };
+
+    window.setupTwoFA = function() {
+      showNotification('Two-factor authentication setup - Connect with backend', 'info');
+    };
+
+    window.viewLoginActivity = function() {
+      showNotification('Login activity viewer - Connect with backend', 'info');
+    };
+
+    // Global logout function
+    window.logout = function() {
+      if (confirm('Are you sure you want to logout? Any unsaved changes will be lost.')) {
+        showNotification('Logging out...', 'info');
+        setTimeout(() => {
+          localStorage.removeItem('userAccountData');
+          window.location.href = 'login.html';
+        }, 1500);
+      }
+    };
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 's') {
+          e.preventDefault();
+          if (hasChanges() && !isLoading) {
+            saveChanges();
+          }
+        }
+        if (e.key === 'r') {
+          e.preventDefault();
+          resetChanges();
+        }
+      }
+    });
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeData();
+      showNotification('Account settings loaded', 'info');
+    });
+
+    // Warn before leaving if there are unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      if (hasChanges()) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI text summarizer — condense long text into key points." />
+  <title>Summarizer – Classroom.AI</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="app-layout">
+    <div class="app-main" id="main-content">
+      <main class="app-content" role="main">
+        <h1 class="page-title">📋 Summarizer</h1>
+        <p class="page-subtitle">Paste long text and get a concise AI-generated summary.</p>
+        <div class="tool-layout">
+          <div class="tool-panel">
+            <label for="textInput" class="tool-panel-header">Enter your text</label>
+            <textarea id="textInput" class="tool-textarea" placeholder="Paste or type text here..." aria-label="Text to summarize"></textarea>
+            <button id="summarizeBtn" class="btn btn-primary" onclick="submitText()">Summarize</button>
+          </div>
+          <div class="tool-panel">
+            <h2 class="tool-panel-header">Summary</h2>
+            <div id="outputBox" class="tool-output" aria-live="polite">Your summary will appear here...</div>
+            <button id="saveBtn" class="btn btn-secondary" style="display:none;" onclick="openModal('saveModal')">💾 Save Summary</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Save Modal -->
+  <div id="saveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="saveTitle">Save Summary</h2>
+        <button class="modal-close" aria-label="Close" onclick="closeModal('saveModal')">&times;</button>
+      </div>
+      <div class="input-group"><label for="fileName">File Name</label><input id="fileName" class="input" placeholder="Enter file name..." required /></div>
+      <div class="input-group" style="margin-top:1rem;"><label for="folderSelect">Select Folder</label><select id="folderSelect" class="input select"><option value="">-- Select Folder --</option></select></div>
+      <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('saveModal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSummary()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initSidebar } from "./js/sidebar.js";
+    import { initTheme } from "./js/theme.js";
+    import { apiRequest, typeWriter } from "./js/api.js";
+    import { showToast, closeModal, openModal, setButtonLoading } from "./js/ui.js";
+    import { auth, db, onAuthStateChanged } from "./js/firebase-config.js";
+    import { collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    initTheme(); initSidebar();
+
+    let currentUser = null;
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      currentUser = user;
+      const sel = document.getElementById("folderSelect");
+      sel.innerHTML = '<option value="">-- Select Folder --</option>';
+      try {
+        const snap = await getDocs(query(collection(db, "projects"), where("uid", "==", user.uid)));
+        snap.forEach(d => { const o = document.createElement("option"); o.value = d.id; o.textContent = d.data().name; sel.appendChild(o); });
+      } catch (e) { console.error(e); }
+    });
+
+    window.submitText = async function() {
+      const input = document.getElementById("textInput").value.trim();
+      const out = document.getElementById("outputBox");
+      const btn = document.getElementById("summarizeBtn");
+      if (!input) return showToast("Please enter text to summarize.", "warning");
+      setButtonLoading(btn, true);
+      out.textContent = "";
+      out.innerHTML = '<span class="loading-text">⏳ Generating summary...</span>';
+      try {
+        const data = await apiRequest("/summarize", { text: input });
+        if (data.summary) { out.textContent = ""; await typeWriter(out, data.summary); document.getElementById("saveBtn").style.display = ""; }
+        else out.textContent = "Unable to summarize.";
+      } catch { out.textContent = "Failed to generate summary."; }
+      finally { setButtonLoading(btn, false, "Summarize"); }
+    };
+
+    window.saveSummary = async function() {
+      const fn = document.getElementById("fileName").value.trim();
+      const fid = document.getElementById("folderSelect").value;
+      const content = document.getElementById("outputBox").textContent;
+      if (!fn || !fid) return showToast("Fill all fields.", "warning");
+      if (!currentUser) return showToast("Sign in first.", "warning");
+      try {
+        await addDoc(collection(db, `projects/${fid}/files`), { title: fn, content, type: "summary", uid: currentUser.uid, createdAt: serverTimestamp() });
+        showToast("Summary saved! ✅", "success"); closeModal("saveModal");
+      } catch (e) { showToast("Save failed.", "error"); console.error(e); }
+    };
+  </script>
+</body>
+</html>

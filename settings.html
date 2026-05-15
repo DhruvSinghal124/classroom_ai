@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Classroom.AI Settings — manage your account and preferences." />
+  <title>Settings – Classroom.AI</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <style>
+    .settings-list{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:0.75rem;}
+    .settings-item{display:flex;align-items:center;gap:1rem;padding:1.25rem;text-decoration:none;color:var(--color-text-primary);transition:all var(--transition-fast);}
+    .settings-item:hover{border-color:var(--color-border-hover);transform:translateX(4px);}
+    .settings-icon{width:40px;height:40px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:1.25rem;background:var(--color-accent-light);}
+  </style>
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="app-layout">
+    <div class="app-main" id="main-content">
+      <main class="app-content" role="main">
+        <h1 class="page-title">⚙️ Settings</h1>
+        <p class="page-subtitle">Manage your account, privacy, and app preferences.</p>
+
+        <nav class="settings-list" aria-label="Settings menu">
+          <a href="Account.html" class="card settings-item">
+            <span class="settings-icon">👤</span>
+            <span>Account</span>
+          </a>
+          <a href="Privacy.html" class="card settings-item">
+            <span class="settings-icon">🔒</span>
+            <span>Privacy</span>
+          </a>
+          <a href="Avatar.html" class="card settings-item">
+            <span class="settings-icon">🖼️</span>
+            <span>Avatar</span>
+          </a>
+          <a href="Notifications.html" class="card settings-item">
+            <span class="settings-icon">🔔</span>
+            <span>Notifications</span>
+          </a>
+          <a href="storage.html" class="card settings-item">
+            <span class="settings-icon">💾</span>
+            <span>Storage and Data</span>
+          </a>
+          <a href="language.html" class="card settings-item">
+            <span class="settings-icon">🌐</span>
+            <span>App Language</span>
+          </a>
+          <a href="Help.html" class="card settings-item">
+            <span class="settings-icon">❓</span>
+            <span>Help</span>
+          </a>
+        </nav>
+      </main>
+    </div>
+  </div>
+  <script type="module">
+    import { initSidebar } from "./js/sidebar.js";
+    import { initTheme } from "./js/theme.js";
+    initTheme();
+    initSidebar();
+  </script>
+</body>
+</html>

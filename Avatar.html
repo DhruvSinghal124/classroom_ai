@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avatar Settings – Classroom.AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .avatar-container {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid transparent;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4) padding-box,
+                        linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4) border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 2rem auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 
+                        0 0 0 1px rgba(255, 255, 255, 0.05);
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .avatar-container:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.4s ease;
+            filter: brightness(0.95) contrast(1.05);
+        }
+
+        .avatar-placeholder {
+            width: 80px;
+            height: 80px;
+            color: #64748b;
+            opacity: 0.6;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            font-weight: 500;
+            z-index: 10;
+            border-radius: 50%;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.2);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .status-message {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-success { 
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .status-error { 
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .status-info { 
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+            border-color: rgba(96, 165, 250, 0.3);
+        }
+
+        .btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .drag-over {
+            border-color: #3b82f6 !important;
+            background: rgba(59, 130, 246, 0.05) !important;
+            transform: scale(1.02);
+        }
+
+        .file-hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .zoom-animation {
+            animation: zoomIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white min-h-screen relative">
+    <!-- Background Pattern -->
+    <div class="fixed inset-0 opacity-20">
+        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0); background-size: 20px 20px;"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="relative z-10 p-8">
+        <a href="settings.html" class="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-lg font-medium transition-colors group">
+            <i data-lucide="arrow-left" class="w-5 h-5 transition-transform group-hover:-translate-x-1"></i>
+            Back to Settings
+        </a>
+
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent mb-2 text-center mt-8">
+            Avatar Manager
+        </h1>
+        <p class="text-center text-slate-400 text-lg">Personalize your classroom experience</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="relative z-10 max-w-lg mx-auto p-8">
+        <div class="glass-card rounded-2xl p-8 text-center zoom-animation">
+            <p class="text-slate-300 mb-8 text-lg leading-relaxed">
+                Upload a profile picture to make your classroom presence unique and personal.
+            </p>
+
+            <!-- Avatar Display -->
+            <div class="avatar-container mb-8" id="avatar-drop-zone">
+                <img id="user-avatar" src="" alt="Your Avatar" class="avatar-image hidden" />
+                <i data-lucide="user" class="avatar-placeholder" id="avatar-placeholder"></i>
+                
+                <div id="loading-overlay" class="loading-overlay hidden">
+                    <div class="loading-spinner"></div>
+                    <span id="loading-text">Loading...</span>
+                    <div class="progress-bar" id="progress-bar" style="display: none;">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Input -->
+            <input type="file" id="avatar-upload-input" accept="image/*" class="hidden">
+            
+            <!-- Action Buttons -->
+            <div class="space-y-4">
+                <button id="select-image-btn" class="btn w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                    Select Image
+                </button>
+                
+                <button id="save-avatar-btn" class="btn w-full bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                    <i data-lucide="upload" class="w-5 h-5"></i>
+                    Upload & Save Avatar
+                </button>
+                
+                <button id="remove-avatar-btn" class="btn w-full bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    Remove Avatar
+                </button>
+            </div>
+
+            <!-- Status Message -->
+            <div id="status-message" class="status-message hidden"></div>
+
+            <!-- Image Info -->
+            <div id="image-info" class="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 hidden">
+                <div class="flex items-center justify-between text-sm text-slate-400">
+                    <span>File: <span id="file-name" class="text-white font-medium"></span></span>
+                    <span>Size: <span id="file-size" class="text-white font-medium"></span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+        import { getFirestore, doc, updateDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-storage.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRvNl05Bbjem0NPcdaD9NON4cycM38BTs",
+            authDomain: "classroom-ai-37eb1.firebaseapp.com",
+            projectId: "classroom-ai-37eb1",
+            storageBucket: "classroom-ai-37eb1.firebasestorage.app",
+            messagingSenderId: "342185948788",
+            appId: "1:342185948788:web:44858dd8e4bdae18e3c321",
+            measurementId: "G-J7H2PQKXGE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // User Configuration
+        const currentUserUid = "demo_user";
+        const userSettingsRef = doc(db, "settings", currentUserUid);
+        const DEFAULT_AVATAR_URL = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face";
+
+        // DOM Elements
+        const userAvatar = document.getElementById("user-avatar");
+        const avatarPlaceholder = document.getElementById("avatar-placeholder");
+        const avatarUploadInput = document.getElementById("avatar-upload-input");
+        const selectImageBtn = document.getElementById("select-image-btn");
+        const saveAvatarBtn = document.getElementById("save-avatar-btn");
+        const removeAvatarBtn = document.getElementById("remove-avatar-btn");
+        const statusMessage = document.getElementById("status-message");
+        const loadingOverlay = document.getElementById("loading-overlay");
+        const loadingText = document.getElementById("loading-text");
+        const progressBar = document.getElementById("progress-bar");
+        const progressFill = document.getElementById("progress-fill");
+        const imageInfo = document.getElementById("image-info");
+        const fileName = document.getElementById("file-name");
+        const fileSize = document.getElementById("file-size");
+        const avatarDropZone = document.getElementById("avatar-drop-zone");
+
+        // State
+        let selectedFile = null;
+        let currentFirebaseAvatarPath = null;
+        let isUploading = false;
+
+        // Utility Functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function validateImage(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!validTypes.includes(file.type)) {
+                throw new Error('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+            }
+
+            if (file.size > maxSize) {
+                throw new Error('File size must be less than 5MB');
+            }
+
+            return true;
+        }
+
+        function showStatus(message, type = 'info', duration = 5000) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.classList.remove('hidden');
+            
+            if (duration > 0) {
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, duration);
+            }
+        }
+
+        function hideStatus() {
+            statusMessage.classList.add('hidden');
+        }
+
+        function showLoading(message = "Loading...", showProgress = false) {
+            loadingText.textContent = message;
+            progressBar.style.display = showProgress ? 'block' : 'none';
+            progressFill.style.width = '0%';
+            loadingOverlay.classList.remove('hidden');
+            
+            userAvatar.classList.add('hidden');
+            avatarPlaceholder.classList.add('hidden');
+            
+            setButtonsState(true);
+            hideStatus();
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+            setButtonsState(false);
+        }
+
+        function setButtonsState(disabled) {
+            selectImageBtn.disabled = disabled;
+            saveAvatarBtn.disabled = disabled;
+            removeAvatarBtn.disabled = disabled;
+        }
+
+        function updateProgress(progress) {
+            progressFill.style.width = `${progress}%`;
+            loadingText.textContent = `Uploading: ${Math.round(progress)}%`;
+        }
+
+        function showAvatar(src) {
+            userAvatar.src = src;
+            userAvatar.classList.remove('hidden');
+            avatarPlaceholder.classList.add('hidden');
+        }
+
+        function hideAvatar() {
+            userAvatar.classList.add('hidden');
+            avatarPlaceholder.classList.remove('hidden');
+        }
+
+        function showImageInfo(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            imageInfo.classList.remove('hidden');
+        }
+
+        function hideImageInfo() {
+            imageInfo.classList.add('hidden');
+        }
+
+        function processSelectedFile(file) {
+            try {
+                validateImage(file);
+                selectedFile = file;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    showAvatar(e.target.result);
+                    showImageInfo(file);
+                    showStatus('Image selected successfully! Click "Upload & Save" to confirm.', 'info');
+                };
+                reader.readAsDataURL(file);
+            } catch (error) {
+                showStatus(error.message, 'error');
+                selectedFile = null;
+                hideImageInfo();
+            }
+        }
+
+        // Event Listeners
+        selectImageBtn.addEventListener("click", () => {
+            avatarUploadInput.click();
+        });
+
+        avatarUploadInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                processSelectedFile(file);
+            }
+            lucide.createIcons();
+        });
+
+        // Drag and Drop
+        avatarDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            avatarDropZone.classList.add('drag-over');
+        });
+
+        avatarDropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            avatarDropZone.classList.remove('drag-over');
+        });
+
+        avatarDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            avatarDropZone.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processSelectedFile(files[0]);
+            }
+        });
+
+        saveAvatarBtn.addEventListener("click", async () => {
+            if (!selectedFile) {
+                showStatus('Please select an image first.', 'info');
+                return;
+            }
+
+            if (isUploading) return;
+            isUploading = true;
+
+            showLoading('Preparing upload...', true);
+
+            try {
+                const avatarPath = `avatars/${currentUserUid}/${Date.now()}_${selectedFile.name}`;
+                const storageRef = ref(storage, avatarPath);
+                const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
+                uploadTask.on('state_changed',
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        updateProgress(progress);
+                    },
+                    (error) => {
+                        console.error("Upload failed:", error);
+                        hideLoading();
+                        showStatus('Upload failed. Please try again.', 'error');
+                        isUploading = false;
+                    },
+                    async () => {
+                        try {
+                            loadingText.textContent = 'Finalizing...';
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+                            // Delete old avatar if exists
+                            if (currentFirebaseAvatarPath && currentFirebaseAvatarPath !== avatarPath) {
+                                const oldAvatarRef = ref(storage, currentFirebaseAvatarPath);
+                                try {
+                                    await deleteObject(oldAvatarRef);
+                                    console.log("Old avatar deleted successfully");
+                                } catch (deleteError) {
+                                    console.warn("Could not delete old avatar:", deleteError);
+                                }
+                            }
+
+                            // Update Firestore
+                            await setDoc(userSettingsRef, {
+                                avatarUrl: downloadURL,
+                                avatarStoragePath: avatarPath,
+                                lastUpdated: new Date().toISOString()
+                            }, { merge: true });
+
+                            currentFirebaseAvatarPath = avatarPath;
+                            showAvatar(downloadURL);
+                            hideLoading();
+                            hideImageInfo();
+                            showStatus('Avatar uploaded and saved successfully! 🎉', 'success');
+                            selectedFile = null;
+                            isUploading = false;
+
+                        } catch (firestoreError) {
+                            console.error("Error saving to Firestore:", firestoreError);
+                            hideLoading();
+                            showStatus('Error saving avatar. Please try again.', 'error');
+                            isUploading = false;
+                        }
+                    }
+                );
+
+            } catch (error) {
+                console.error("Error starting upload:", error);
+                hideLoading();
+                showStatus('Error starting upload. Please try again.', 'error');
+                isUploading = false;
+            }
+        });
+
+        removeAvatarBtn.addEventListener("click", async () => {
+            if (!currentFirebaseAvatarPath && userAvatar.src === DEFAULT_AVATAR_URL) {
+                showStatus('No custom avatar to remove.', 'info');
+                return;
+            }
+
+            if (!confirm("Are you sure you want to remove your current avatar?")) {
+                return;
+            }
+
+            showLoading('Removing avatar...');
+
+            try {
+                if (currentFirebaseAvatarPath) {
+                    const avatarRefToDelete = ref(storage, currentFirebaseAvatarPath);
+                    await deleteObject(avatarRefToDelete);
+                }
+
+                await setDoc(userSettingsRef, {
+                    avatarUrl: DEFAULT_AVATAR_URL,
+                    avatarStoragePath: null,
+                    lastUpdated: new Date().toISOString()
+                }, { merge: true });
+
+                showAvatar(DEFAULT_AVATAR_URL);
+                currentFirebaseAvatarPath = null;
+                selectedFile = null;
+                hideLoading();
+                hideImageInfo();
+                showStatus('Avatar removed successfully!', 'success');
+
+            } catch (error) {
+                console.error("Error removing avatar:", error);
+                hideLoading();
+                showStatus('Failed to remove avatar. Please try again.', 'error');
+            }
+        });
+
+        // Initialize App
+        showLoading("Loading your avatar...");
+
+        onSnapshot(userSettingsRef, (docSnap) => {
+            try {
+                if (docSnap.exists() && docSnap.data().avatarUrl) {
+                    const storedAvatarUrl = docSnap.data().avatarUrl;
+                    const storedAvatarPath = docSnap.data().avatarStoragePath || null;
+                    
+                    showAvatar(storedAvatarUrl);
+                    currentFirebaseAvatarPath = storedAvatarPath;
+                    hideLoading();
+                } else {
+                    showAvatar(DEFAULT_AVATAR_URL);
+                    currentFirebaseAvatarPath = null;
+                    hideLoading();
+                    showStatus('Welcome! Upload your first avatar to get started.', 'info', 3000);
+                }
+            } catch (error) {
+                console.error("Error processing avatar data:", error);
+                showAvatar(DEFAULT_AVATAR_URL);
+                currentFirebaseAvatarPath = null;
+                hideLoading();
+                showStatus('Could not load avatar. Default shown.', 'error');
+            }
+        }, (error) => {
+            console.error("Error fetching avatar:", error);
+            showAvatar(DEFAULT_AVATAR_URL);
+            currentFirebaseAvatarPath = null;
+            hideLoading();
+            showStatus('Connection error. Using default avatar.', 'error');
+        });
+
+        // Recreate icons after dynamic content changes
+        const observer = new MutationObserver(() => {
+            lucide.createIcons();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    </script>
+</body>
+</html>

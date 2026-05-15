@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI essay writer — generate structured essays on any topic." />
+  <title>Essay Writer – Classroom.AI</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="app-layout">
+    <div class="app-main" id="main-content">
+      <main class="app-content" role="main">
+        <h1 class="page-title">📝 Essay Writer</h1>
+        <p class="page-subtitle">Enter a topic and generate a complete, well-structured essay using AI.</p>
+        <div style="max-width:680px;margin:0 auto;">
+          <div class="input-group">
+            <label for="topicInput">Essay Topic</label>
+            <input id="topicInput" class="input" placeholder="Enter your essay topic..." />
+          </div>
+          <button id="essayBtn" class="btn btn-primary" style="margin-top:1rem;" onclick="generateEssay()">Generate Essay</button>
+          <div id="outputContainer" style="margin-top:2rem;display:none;">
+            <div class="card" style="padding:1.5rem;">
+              <h3 style="font-size:0.8125rem;color:var(--color-text-muted);margin-bottom:0.75rem;text-align:center;">📄 Generated Essay</h3>
+              <div id="output" class="tool-output" style="min-height:200px;" aria-live="polite"></div>
+            </div>
+            <div style="display:flex;justify-content:center;margin-top:1rem;">
+              <button id="saveBtn" class="btn btn-secondary" style="display:none;" onclick="openModal('saveModal')">💾 Save Essay</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Save Modal -->
+  <div id="saveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="saveTitle">
+    <div class="modal-content">
+      <div class="modal-header"><h2 id="saveTitle">Save Essay</h2><button class="modal-close" aria-label="Close" onclick="closeModal('saveModal')">&times;</button></div>
+      <div class="input-group"><label for="fileName">File Name</label><input id="fileName" class="input" placeholder="File name..." required /></div>
+      <div class="input-group" style="margin-top:1rem;"><label for="folderSelect">Folder</label><select id="folderSelect" class="input select"><option value="">-- Select --</option></select></div>
+      <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('saveModal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveEssay()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initSidebar } from "./js/sidebar.js"; import { initTheme } from "./js/theme.js";
+    import { apiRequest } from "./js/api.js"; import { showToast, closeModal, openModal, setButtonLoading } from "./js/ui.js";
+    import { auth, db, onAuthStateChanged } from "./js/firebase-config.js";
+    import { collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    initTheme(); initSidebar();
+
+    let currentUser = null;
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return; currentUser = user;
+      const sel = document.getElementById("folderSelect"); sel.innerHTML = '<option value="">-- Select --</option>';
+      try { const s = await getDocs(query(collection(db, "projects"), where("uid", "==", user.uid))); s.forEach(d => { const o = document.createElement("option"); o.value = d.id; o.textContent = d.data().name; sel.appendChild(o); }); } catch (e) { console.error(e); }
+    });
+
+    document.getElementById("topicInput").addEventListener("keydown", e => { if (e.key === "Enter") generateEssay(); });
+
+    window.generateEssay = async function() {
+      const topic = document.getElementById("topicInput").value.trim();
+      const out = document.getElementById("output");
+      const btn = document.getElementById("essayBtn");
+      if (!topic) return showToast("Enter a topic.", "warning");
+      setButtonLoading(btn, true);
+      document.getElementById("outputContainer").style.display = "";
+      out.innerHTML = '<span class="loading-text">⏳ Generating essay...</span>';
+      try {
+        const data = await apiRequest("/essay", { topic });
+        out.textContent = data.essay?.trim() || "Error generating essay.";
+        document.getElementById("saveBtn").style.display = "";
+      } catch { out.textContent = "Failed to generate essay."; }
+      finally { setButtonLoading(btn, false, "Generate Essay"); }
+    };
+
+    window.saveEssay = async function() {
+      const fn = document.getElementById("fileName").value.trim();
+      const fid = document.getElementById("folderSelect").value;
+      if (!fn || !fid) return showToast("Fill all fields.", "warning");
+      if (!currentUser) return showToast("Sign in first.", "warning");
+      try {
+        await addDoc(collection(db, `projects/${fid}/files`), { title: fn, content: document.getElementById("output").textContent, type: "essay", uid: currentUser.uid, createdAt: serverTimestamp() });
+        showToast("Essay saved! ✅", "success"); closeModal("saveModal");
+      } catch (e) { showToast("Save failed.", "error"); }
+    };
+  </script>
+</body>
+</html>

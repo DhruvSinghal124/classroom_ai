@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-powered notes generator — convert lectures and topics into structured notes." />
+  <title>Notes Generator – Classroom.AI</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="app-layout">
+    <div class="app-main" id="main-content">
+      <main class="app-content" role="main">
+        <h1 class="page-title">📝 Notes Generator</h1>
+        <p class="page-subtitle">Paste a lecture or topic and generate structured study notes with AI.</p>
+
+        <div class="tool-layout">
+          <!-- Input Panel -->
+          <div class="tool-panel">
+            <label for="inputNotes" class="tool-panel-header">Topic / Lecture Text</label>
+            <textarea id="inputNotes" class="tool-textarea" placeholder="Paste topic or lecture here..." aria-label="Input text for notes generation"></textarea>
+            <button id="generateBtn" class="btn btn-primary" onclick="generateNotes()">Generate Notes</button>
+          </div>
+
+          <!-- Output Panel -->
+          <div class="tool-panel">
+            <label for="outputNotes" class="tool-panel-header">Generated Notes</label>
+            <textarea id="outputNotes" class="tool-textarea" readonly placeholder="Your notes will appear here..." aria-live="polite" aria-label="Generated notes output"></textarea>
+            <button class="btn btn-secondary" onclick="openModal('saveModal')">💾 Save Notes</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Save Modal -->
+  <div id="saveModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="saveModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="saveModalTitle">Save Notes</h2>
+        <button class="modal-close" aria-label="Close" onclick="closeModal('saveModal')">&times;</button>
+      </div>
+      <div class="input-group">
+        <label for="fileName">File Name</label>
+        <input id="fileName" type="text" class="input" placeholder="Enter file name..." required />
+      </div>
+      <div class="input-group" style="margin-top:1rem;">
+        <label for="folderSelect">Select Folder</label>
+        <select id="folderSelect" class="input select">
+          <option value="">-- Select Folder --</option>
+        </select>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('saveModal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="saveNote()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initSidebar } from "./js/sidebar.js";
+    import { initTheme } from "./js/theme.js";
+    import { apiRequest, typeWriter } from "./js/api.js";
+    import { showToast, closeModal, openModal, setButtonLoading } from "./js/ui.js";
+    import { auth, db, onAuthStateChanged } from "./js/firebase-config.js";
+    import { collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    initTheme();
+    initSidebar();
+
+    let currentUser = null;
+    let defaultFolderId = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      currentUser = user;
+      const folderSelect = document.getElementById("folderSelect");
+      folderSelect.innerHTML = '<option value="">-- Select Folder --</option>';
+      try {
+        const q = query(collection(db, "projects"), where("uid", "==", user.uid));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(docSnap => {
+          const opt = document.createElement("option");
+          opt.value = docSnap.id;
+          opt.textContent = docSnap.data().name;
+          folderSelect.appendChild(opt);
+        });
+        // Auto-create "AI Notes" folder if needed
+        const nq = query(collection(db, "projects"), where("uid", "==", user.uid), where("name", "==", "AI Notes"));
+        const ns = await getDocs(nq);
+        if (ns.empty) {
+          const ref = await addDoc(collection(db, "projects"), { uid: user.uid, name: "AI Notes", description: "Auto-generated notes", created: new Date().toISOString() });
+          defaultFolderId = ref.id;
+          const opt = document.createElement("option");
+          opt.value = defaultFolderId;
+          opt.textContent = "AI Notes";
+          folderSelect.appendChild(opt);
+        } else {
+          defaultFolderId = ns.docs[0].id;
+        }
+        folderSelect.value = defaultFolderId;
+      } catch (err) {
+        console.error("Error loading folders:", err);
+      }
+    });
+
+    window.generateNotes = async function() {
+      const input = document.getElementById("inputNotes").value.trim();
+      const output = document.getElementById("outputNotes");
+      const btn = document.getElementById("generateBtn");
+      if (!input) return showToast("Please enter a topic or lecture text.", "warning");
+
+      setButtonLoading(btn, true);
+      output.value = "";
+
+      const prompt = `You are a classroom note-taking assistant. Convert the following lecture or topic into clear, concise, and well-structured bullet point notes.\nInclude definitions, key facts, important terms, and simple student-friendly language.\n\nText:\n"""${input}"""`;
+
+      try {
+        const data = await apiRequest("/gemini", { prompt });
+        await typeWriter(output, data.response);
+      } catch (err) {
+        output.value = "Failed to generate notes. Please try again.";
+      } finally {
+        setButtonLoading(btn, false, "Generate Notes");
+      }
+    };
+
+    window.saveNote = async function() {
+      const content = document.getElementById("outputNotes").value.trim();
+      const fileName = document.getElementById("fileName").value.trim();
+      const folderId = document.getElementById("folderSelect").value;
+      if (!content) return showToast("Generate notes first!", "warning");
+      if (!fileName) return showToast("Enter a file name.", "warning");
+      if (!folderId) return showToast("Select a folder.", "warning");
+      if (!currentUser) return showToast("Please sign in first.", "warning");
+
+      try {
+        await addDoc(collection(db, `projects/${folderId}/files`), {
+          uid: currentUser.uid, title: fileName, content, timestamp: new Date().toISOString()
+        });
+        showToast("Notes saved successfully! 🎉", "success");
+        closeModal("saveModal");
+      } catch (e) {
+        console.error("Save error:", e);
+        showToast("Failed to save notes.", "error");
+      }
+    };
+  </script>
+</body>
+</html>

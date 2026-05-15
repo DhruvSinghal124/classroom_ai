@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI paraphraser — reformat messy text into clean paragraphs." />
+  <title>Paraphraser – Classroom.AI</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="app-layout">
+    <div class="app-main" id="main-content">
+      <main class="app-content" role="main">
+        <h1 class="page-title">🔄 Paraphraser</h1>
+        <p class="page-subtitle">Reformat messy text into clean, well-structured paragraphs using AI.</p>
+        <div style="max-width:680px;margin:0 auto;">
+          <div class="input-group">
+            <label for="textInput">Your Text</label>
+            <textarea id="textInput" class="textarea" rows="6" placeholder="Paste your rough or broken text here..."></textarea>
+          </div>
+          <button id="runBtn" class="btn btn-primary" style="margin-top:1rem;" onclick="paragraphize()">Paraphrase</button>
+          <div id="outputContainer" style="margin-top:2rem;display:none;">
+            <div class="card" style="padding:1.5rem;">
+              <h3 style="font-size:0.8125rem;color:var(--color-text-muted);margin-bottom:0.75rem;text-align:center;">📝 Paraphrased Output</h3>
+              <div id="output" class="tool-output" style="min-height:120px;" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initSidebar } from "./js/sidebar.js"; import { initTheme } from "./js/theme.js";
+    import { apiRequest } from "./js/api.js"; import { showToast, setButtonLoading } from "./js/ui.js";
+    initTheme(); initSidebar();
+
+    window.paragraphize = async function() {
+      const text = document.getElementById("textInput").value.trim();
+      const out = document.getElementById("output");
+      const btn = document.getElementById("runBtn");
+      if (!text) return showToast("Enter some text.", "warning");
+      setButtonLoading(btn, true);
+      document.getElementById("outputContainer").style.display = "";
+      out.innerHTML = '<span class="loading-text">⏳ Formatting...</span>';
+      try {
+        const data = await apiRequest("/paragraphize", { text });
+        out.textContent = data.paragraph || "Could not generate paragraph.";
+      } catch { out.textContent = "Failed to connect."; }
+      finally { setButtonLoading(btn, false, "Paraphrase"); }
+    };
+  </script>
+</body>
+</html>

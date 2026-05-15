@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI code explainer — paste code and get a simple explanation." />
+  <title>Code Explainer – Classroom.AI</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="app-layout">
+    <div class="app-main" id="main-content">
+      <main class="app-content" role="main">
+        <h1 class="page-title">💡 Code Explainer</h1>
+        <p class="page-subtitle">Paste your code and get a clear, simple explanation.</p>
+        <div class="tool-layout">
+          <div class="tool-panel">
+            <label for="codeInput" class="tool-panel-header">Paste your code</label>
+            <textarea id="codeInput" class="tool-textarea" placeholder="Paste your code here..." style="font-family:'Fira Code',monospace;"></textarea>
+            <button id="explainBtn" class="btn btn-primary" onclick="explainCode()">Explain</button>
+          </div>
+          <div class="tool-panel">
+            <h2 class="tool-panel-header">Explanation</h2>
+            <div id="explanationOutput" class="tool-output" aria-live="polite">Your explanation will appear here...</div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script type="module">
+    import { initSidebar } from "./js/sidebar.js"; import { initTheme } from "./js/theme.js";
+    import { apiRequest } from "./js/api.js"; import { showToast, setButtonLoading } from "./js/ui.js";
+    initTheme(); initSidebar();
+
+    window.explainCode = async function() {
+      const code = document.getElementById("codeInput").value.trim();
+      const out = document.getElementById("explanationOutput");
+      const btn = document.getElementById("explainBtn");
+      if (!code) return showToast("Paste your code first.", "warning");
+      setButtonLoading(btn, true);
+      out.textContent = "⏳ Explaining your code...";
+      try { const data = await apiRequest("/explain", { prompt: code }); out.textContent = data.summary || "No explanation generated."; }
+      catch { out.textContent = "Failed to explain code."; }
+      finally { setButtonLoading(btn, false, "Explain"); }
+    };
+  </script>
+</body>
+</html>

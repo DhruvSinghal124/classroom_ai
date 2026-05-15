@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#0f172a] text-white">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notification Settings – Classroom.AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    
+    .notification-card {
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+    }
+    
+    .notification-card:hover {
+      transform: translateY(-2px);
+      border-left-color: #3b82f6;
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #374151;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #3b82f6;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    .notification-toast {
+      animation: slideInRight 0.5s ease-out;
+    }
+    
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .notification-popup {
+      animation: popIn 0.3s ease-out;
+    }
+    
+    @keyframes popIn {
+      from { transform: scale(0.8) translateY(20px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    
+    .pulse-ring {
+      animation: pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    
+    @keyframes pulse-ring {
+      0% { transform: scale(0.33); }
+      80%, 100% { opacity: 0; }
+    }
+    
+    .status-indicator {
+      position: relative;
+    }
+    
+    .status-indicator::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      animation: pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+      border: 3px solid;
+    }
+    
+    .status-online::after { border-color: #10b981; }
+    .status-busy::after { border-color: #f59e0b; }
+    .status-offline::after { border-color: #6b7280; }
+    
+    .time-selector {
+      transition: all 0.3s ease;
+    }
+    
+    .time-selector.selected {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+    }
+    
+    .notification-history {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .notification-history::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .notification-history::-webkit-scrollbar-track {
+      background: rgba(55, 65, 81, 0.3);
+      border-radius: 3px;
+    }
+    
+    .notification-history::-webkit-scrollbar-thumb {
+      background: #3b82f6;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body class="bg-[#0f172a] text-white min-h-screen px-4 py-8 relative overflow-x-hidden">
+
+  <!-- Animated Background Elements -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+    <div class="absolute top-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
+    <div class="absolute bottom-40 right-40 w-60 h-60 bg-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 4s;"></div>
+  </div>
+
+  <!-- Live Notification Container -->
+  <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-3 max-w-sm">
+    <!-- Live notifications will appear here -->
+  </div>
+
+  <!-- Back Button -->
+  <a href="settings.html" class="relative z-10 inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-lg font-medium ml-4 mb-8 transition-all duration-300 hover:translate-x-1">
+    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    Back to Settings
+  </a>
+
+  <!-- Main Container -->
+  <div class="relative z-10 max-w-7xl mx-auto">
+    
+    <!-- Header Section -->
+    <div class="glass-effect p-8 rounded-2xl shadow-2xl mb-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center relative">
+            <i data-lucide="bell" class="w-8 h-8 text-white"></i>
+            <div class="status-indicator status-online absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-[#0f172a]"></div>
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Notification Settings
+            </h1>
+            <p class="text-gray-400 mt-1">Customize how and when you receive notifications</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <span class="text-green-400 text-sm font-medium">All Systems Online</span>
+          </div>
+          <p class="text-xs text-gray-400">Last updated: <span id="lastUpdated">Just now</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <button id="testNotification" class="notification-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="zap" class="w-8 h-8 text-yellow-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Test Notification</h3>
+        <p class="text-sm text-gray-400">Send a test notification</p>
+      </button>
+
+      <button id="enableAll" class="notification-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="bell-ring" class="w-8 h-8 text-green-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Enable All</h3>
+        <p class="text-sm text-gray-400">Turn on all notifications</p>
+      </button>
+
+      <button id="disableAll" class="notification-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="bell-off" class="w-8 h-8 text-red-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Disable All</h3>
+        <p class="text-sm text-gray-400">Turn off all notifications</p>
+      </button>
+
+      <button id="manageDevices" class="notification-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="smartphone" class="w-8 h-8 text-blue-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Manage Devices</h3>
+        <p class="text-sm text-gray-400">Configure device settings</p>
+      </button>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid lg:grid-cols-3 gap-8">
+      
+      <!-- Notification Categories -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Email Notifications -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="mail" class="w-6 h-6 text-blue-400"></i>
+            <h2 class="text-xl font-bold text-blue-300">Email Notifications</h2>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="inbox" class="w-5 h-5 text-green-400"></i>
+                <div>
+                  <p class="font-medium">New Messages</p>
+                  <p class="text-sm text-gray-400">Get notified when you receive new messages</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="emailMessages" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="calendar-days" class="w-5 h-5 text-purple-400"></i>
+                <div>
+                  <p class="font-medium">Assignment Reminders</p>
+                  <p class="text-sm text-gray-400">Reminders for upcoming assignments</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="emailAssignments" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="graduation-cap" class="w-5 h-5 text-yellow-400"></i>
+                <div>
+                  <p class="font-medium">Course Updates</p>
+                  <p class="text-sm text-gray-400">New course materials and announcements</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="emailCourses">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="trophy" class="w-5 h-5 text-orange-400"></i>
+                <div>
+                  <p class="font-medium">Achievements</p>
+                  <p class="text-sm text-gray-400">Notifications for badges and achievements</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="emailAchievements" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Push Notifications -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="smartphone" class="w-6 h-6 text-green-400"></i>
+            <h2 class="text-xl font-bold text-green-300">Push Notifications</h2>
+            <span id="pushStatus" class="px-2 py-1 bg-green-600 text-white text-xs rounded-full">Enabled</span>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="message-square" class="w-5 h-5 text-blue-400"></i>
+                <div>
+                  <p class="font-medium">Instant Messages</p>
+                  <p class="text-sm text-gray-400">Real-time chat notifications</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="pushMessages" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="clock" class="w-5 h-5 text-red-400"></i>
+                <div>
+                  <p class="font-medium">Class Reminders</p>
+                  <p class="text-sm text-gray-400">Get reminded before classes start</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="pushClasses" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="users" class="w-5 h-5 text-purple-400"></i>
+                <div>
+                  <p class="font-medium">Social Updates</p>
+                  <p class="text-sm text-gray-400">Friend requests and social interactions</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="pushSocial">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- SMS Notifications -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="message-circle" class="w-6 h-6 text-yellow-400"></i>
+            <h2 class="text-xl font-bold text-yellow-300">SMS Notifications</h2>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="shield-alert" class="w-5 h-5 text-red-400"></i>
+                <div>
+                  <p class="font-medium">Security Alerts</p>
+                  <p class="text-sm text-gray-400">Important security notifications via SMS</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="smsSecurity" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl">
+              <div class="flex items-center gap-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-400"></i>
+                <div>
+                  <p class="font-medium">Emergency Alerts</p>
+                  <p class="text-sm text-gray-400">Critical emergency notifications</p>
+                </div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="smsEmergency" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="space-y-6">
+        
+        <!-- Do Not Disturb -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="moon" class="w-6 h-6 text-purple-400"></i>
+            <h3 class="text-lg font-bold text-purple-300">Do Not Disturb</h3>
+          </div>
+          
+          <div class="space-y-4">
+            <label class="toggle-switch w-full flex items-center justify-between">
+              <span class="text-sm">Enable DND Mode</span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="dndMode">
+                <span class="slider"></span>
+              </div>
+            </label>
+            
+            <div id="dndSettings" class="space-y-3 opacity-50 pointer-events-none">
+              <div>
+                <label class="block text-sm font-medium mb-2">Quiet Hours</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <input type="time" id="quietStart" value="22:00" class="p-2 bg-[#0f172a] text-white border border-gray-600 rounded-lg text-sm">
+                  <input type="time" id="quietEnd" value="08:00" class="p-2 bg-[#0f172a] text-white border border-gray-600 rounded-lg text-sm">
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-2">Days</label>
+                <div class="flex flex-wrap gap-1">
+                  <button class="time-selector px-2 py-1 text-xs bg-gray-700 rounded" data-day="0">Sun</button>
+                  <button class="time-selector px-2 py-1 text-xs bg-gray-700 rounded selected" data-day="1">Mon</button>
+                  <button class="time-selector px-2 py-1 text-xs bg-gray-700 rounded selected" data-day="2">Tue</button>
+                  <button class="time-selector px-2 py-1 text-xs bg-gray-700 rounded selected" data-day="3">Wed</button>
+                  <button class="time-selector px-2 py-1 text-xs bg-gray-700 rounded selected" data-day="4">Thu</button>
+                  <button class="time-selector px-2 py-1 text-xs bg-gray-700 rounded selected" data-day="5">Fri</button>
+                  <button class="time-selector px-2 py-1 text-xs bg-gray-700 rounded" data-day="6">Sat</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification Frequency -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="timer" class="w-6 h-6 text-blue-400"></i>
+            <h3 class="text-lg font-bold text-blue-300">Frequency</h3>
+          </div>
+          
+          <div class="space-y-3">
+            <label class="flex items-center justify-between">
+              <span class="text-sm">Email Digest</span>
+              <select id="emailFrequency" class="p-2 bg-[#0f172a] text-white border border-gray-600 rounded-lg text-sm">
+                <option value="instant">Instant</option>
+                <option value="hourly">Hourly</option>
+                <option value="daily" selected>Daily</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </label>
+            
+            <label class="flex items-center justify-between">
+              <span class="text-sm">Summary Reports</span>
+              <select id="reportFrequency" class="p-2 bg-[#0f172a] text-white border border-gray-600 rounded-lg text-sm">
+                <option value="daily">Daily</option>
+                <option value="weekly" selected>Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Notification History -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="history" class="w-6 h-6 text-green-400"></i>
+            <h3 class="text-lg font-bold text-green-300">Recent Notifications</h3>
+          </div>
+          
+          <div id="notificationHistory" class="notification-history space-y-3">
+            <!-- Recent notifications will be populated here -->
+          </div>
+          
+          <button id="clearHistory" class="w-full mt-4 py-2 px-4 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors">
+            Clear History
+          </button>
+        </div>
+
+        <!-- Device Status -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-4">
+            <i data-lucide="monitor-speaker" class="w-6 h-6 text-yellow-400"></i>
+            <h3 class="text-lg font-bold text-yellow-300">Connected Devices</h3>
+          </div>
+          
+          <div id="deviceList" class="space-y-3">
+            <!-- Device list will be populated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Settings -->
+    <div class="mt-8 text-center">
+      <button id="saveSettings" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105">
+        <i data-lucide="save" class="w-5 h-5 inline mr-2"></i>
+        Save All Settings
+      </button>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Notification system state
+    const notificationSettings = {
+      email: {
+        messages: true,
+        assignments: true,
+        courses: false,
+        achievements: true
+      },
+      push: {
+        messages: true,
+        classes: true,
+        social: false
+      },
+      sms: {
+        security: true,
+        emergency: true
+      },
+      dnd: {
+        enabled: false,
+        quietStart: '22:00',
+        quietEnd: '08:00',
+        days: [1, 2, 3, 4, 5]
+      },
+      frequency: {
+        email: 'daily',
+        reports: 'weekly'
+      }
+    };
+
+    // DOM elements
+    const elements = {
+      notificationContainer: document.getElementById('notificationContainer'),
+      lastUpdated: document.getElementById('lastUpdated'),
+      pushStatus: document.getElementById('pushStatus'),
+      dndMode: document.getElementById('dndMode'),
+      dndSettings: document.getElementById('dndSettings'),
+      notificationHistory: document.getElementById('notificationHistory'),
+      deviceList: document.getElementById('deviceList'),
+      saveSettings: document.getElementById('saveSettings')
+    };
+
+    // Show live notification
+    function showLiveNotification(title, message, type = 'info', duration = 5000) {
+      const notification = document.createElement('div');
+      notification.className = `notification-toast glass-effect p-4 rounded-lg shadow-lg border-l-4 ${
+        type === 'success' ? 'border-green-400' : 
+        type === 'error' ? 'border-red-400' : 
+        type === 'warning' ? 'border-yellow-400' : 'border-blue-400'
+      }`;
+      
+      const iconMap = {
+        success: 'check-circle',
+        error: 'x-circle',
+        warning: 'alert-triangle',
+        info: 'info'
+      };
+      
+      const colorMap = {
+        success: 'text-green-400',
+        error: 'text-red-400',
+        warning: 'text-yellow-400',
+        info: 'text-blue-400'
+      };
+      
+      notification.innerHTML = `
+        <div class="flex items-start gap-3">
+          <i data-lucide="${iconMap[type]}" class="w-5 h-5 ${colorMap[type]} mt-0.5"></i>
+          <div class="flex-1">
+            <p class="font-semibold text-sm mb-1">${title}</p>
+            <p class="text-xs text-gray-400">${message}</p>
+            <p class="text-xs text-gray-500 mt-1">${new Date().toLocaleTimeString()}</p>
+          </div>
+          <button class="close-notification text-gray-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `;
+      
+      elements.notificationContainer.appendChild(notification);
+      lucide.createIcons();
+      
+      // Close button functionality
+      notification.querySelector('.close-notification').addEventListener('click', () => {
+        notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+        setTimeout(() => notification.remove(), 300);
+      });
+      
+      // Auto remove
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.style.animation = 'slideInRight 0.3s ease-out reverse';
+          setTimeout(() => notification.remove(), 300);
+        }
+      }, duration);
+      
+      // Add to history
+      addToHistory(title, message, type);
+    }
+
+    // Add notification to history
+    function addToHistory(title, message, type) {
+      const historyItem = document.createElement('div');
+      historyItem.className = 'p-3 bg-[#0f172a] rounded-lg border-l-2 border-gray-600';
+      
+      const colorMap = {
+        success: 'border-green-400',
+        error: 'border-red-400',
+        warning: 'border-yellow-400',
+        info: 'border-blue-400'
+      };
+      
+      historyItem.classList.add(colorMap[type]);
+      
+      historyItem.innerHTML = `
+        <p class="font-medium text-xs mb-1">${title}</p>
+        <p class="text-xs text-gray-400 mb-2">${message}</p>
+        <p class="text-xs text-gray-500">${new Date().toLocaleString()}</p>
+      `;
+      
+      elements.notificationHistory.insertBefore(historyItem, elements.notificationHistory.firstChild);
+      
+      // Keep only last 10 notifications
+      while (elements.notificationHistory.children.length > 10) {
+        elements.notificationHistory.removeChild(elements.notificationHistory.lastChild);
+      }
+    }
+
+    // Request notification permission
+    async function requestNotificationPermission() {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          elements.pushStatus.textContent = 'Enabled';
+          elements.pushStatus.className = 'px-2 py-1 bg-green-600 text-white text-xs rounded-full';
+          showLiveNotification('Success', 'Browser notifications enabled!', 'success');
+        } else {
+          elements.pushStatus.textContent = 'Blocked';
+          elements.pushStatus.className = 'px-2 py-1 bg-red-600 text-white text-xs rounded-full';
+          showLiveNotification('Warning', 'Please enable notifications in browser settings', 'warning');
+        }
+      }
+    }
+
+    // Show browser notification
+    function showBrowserNotification(title, message, icon = null) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+          body: message,
+          icon: icon || '/favicon.ico',
+          badge: '/favicon.ico'
+        });
+      }
+    }
+
+    // Initialize toggles
+    function initializeToggles() {
+      // Email notifications
+      document.getElementById('emailMessages').checked = notificationSettings.email.messages;
+      document.getElementById('emailAssignments').checked = notificationSettings.email.assignments;
+      document.getElementById('emailCourses').checked = notificationSettings.email.courses;
+      document.getElementById('emailAchievements').checked = notificationSettings.email.achievements;
+      
+    // Push notifications
+document.getElementById('pushMessages').checked = notificationSettings.push.messages;
+document.getElementById('pushClasses').checked = notificationSettings.push.classes;
+document.getElementById('pushSocial').checked = notificationSettings.push.social;
+
+// SMS
+document.getElementById('smsSecurity').checked = notificationSettings.sms.security;
+document.getElementById('smsEmergency').checked = notificationSettings.sms.emergency;
+
+// DND
+document.getElementById('dndMode').checked = notificationSettings.dnd.enabled;
+toggleDndUI(notificationSettings.dnd.enabled);
+document.getElementById('quietStart').value = notificationSettings.dnd.quietStart;
+document.getElementById('quietEnd').value = notificationSettings.dnd.quietEnd;
+
+// Frequency
+document.getElementById('emailFrequency').value = notificationSettings.frequency.email;
+document.getElementById('reportFrequency').value = notificationSettings.frequency.reports;
+}
+
+// Toggle DND UI
+function toggleDndUI(enabled) {
+  const dnd = elements.dndSettings;
+  if (enabled) {
+    dnd.classList.remove('opacity-50', 'pointer-events-none');
+  } else {
+    dnd.classList.add('opacity-50', 'pointer-events-none');
+  }
+}
+
+// Setup listeners
+function setupEventListeners() {
+  document.getElementById('dndMode').addEventListener('change', (e) => {
+    notificationSettings.dnd.enabled = e.target.checked;
+    toggleDndUI(e.target.checked);
+  });
+
+  document.querySelectorAll('.time-selector').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('selected');
+    });
+  });
+
+  document.getElementById('saveSettings').addEventListener('click', () => {
+    // Read DND quiet times and days
+    notificationSettings.dnd.quietStart = document.getElementById('quietStart').value;
+    notificationSettings.dnd.quietEnd = document.getElementById('quietEnd').value;
+    notificationSettings.dnd.days = Array.from(document.querySelectorAll('.time-selector.selected'))
+                                         .map(btn => parseInt(btn.dataset.day));
+
+    // Frequencies
+    notificationSettings.frequency.email = document.getElementById('emailFrequency').value;
+    notificationSettings.frequency.reports = document.getElementById('reportFrequency').value;
+
+    showLiveNotification('Settings Saved', 'Your preferences have been updated.', 'success');
+    elements.lastUpdated.textContent = 'Just now';
+  });
+
+  document.getElementById('enableAll').addEventListener('click', () => {
+    document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+    showLiveNotification('All Enabled', 'All notifications have been turned on.', 'info');
+  });
+
+  document.getElementById('disableAll').addEventListener('click', () => {
+    document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+    showLiveNotification('All Disabled', 'All notifications have been turned off.', 'warning');
+  });
+
+  document.getElementById('testNotification').addEventListener('click', () => {
+    requestNotificationPermission();
+    showBrowserNotification('Test Alert 🚀', 'This is a sample notification from Classroom.AI');
+    showLiveNotification('Test Sent', 'Browser & UI test notifications shown.', 'success');
+  });
+
+  document.getElementById('clearHistory').addEventListener('click', () => {
+    elements.notificationHistory.innerHTML = '';
+    showLiveNotification('History Cleared', 'All notification history was deleted.', 'info');
+  });
+}
+
+// Fake device list
+function populateDeviceList() {
+  const devices = [
+    { name: 'Chrome on Windows', status: 'Online' },
+    { name: 'Mobile App (Android)', status: 'Offline' },
+    { name: 'iPad Safari', status: 'Busy' },
+  ];
+
+  devices.forEach(device => {
+    const statusColor = device.status === 'Online' ? 'bg-green-400' :
+                        device.status === 'Busy' ? 'bg-yellow-400' : 'bg-gray-500';
+    const div = document.createElement('div');
+    div.className = 'flex items-center justify-between p-3 bg-[#0f172a] rounded-lg';
+    div.innerHTML = `
+      <div class="flex items-center gap-3">
+        <i data-lucide="monitor" class="w-5 h-5 text-blue-400"></i>
+        <div>
+          <p class="font-medium">${device.name}</p>
+          <p class="text-xs text-gray-400">${device.status}</p>
+        </div>
+      </div>
+      <span class="w-3 h-3 ${statusColor} rounded-full"></span>
+    `;
+    elements.deviceList.appendChild(div);
+  });
+  lucide.createIcons();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  initializeToggles();
+  setupEventListeners();
+  populateDeviceList();
+});
+  </script>
+</body>
+</html>

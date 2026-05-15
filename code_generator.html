@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI code generator — describe what you want and get working code." />
+  <title>Code Generator – Classroom.AI</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <style>.code-output{font-family:'Fira Code',monospace;color:#86efac;}</style>
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="app-layout">
+    <div class="app-main" id="main-content">
+      <main class="app-content" role="main">
+        <h1 class="page-title">⚡ Code Generator</h1>
+        <p class="page-subtitle">Describe what you need and get working code instantly.</p>
+        <div class="tool-layout">
+          <div class="tool-panel">
+            <label for="instructionInput" class="tool-panel-header">Describe what you want</label>
+            <textarea id="instructionInput" class="tool-textarea" placeholder="e.g. Generate Python code to add two numbers..."></textarea>
+            <button id="genBtn" class="btn btn-primary" onclick="generateCode()">Generate Code</button>
+          </div>
+          <div class="tool-panel">
+            <h2 class="tool-panel-header">Generated Code</h2>
+            <pre id="codeOutput" class="tool-output code-output" aria-live="polite">Your code will appear here...</pre>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script type="module">
+    import { initSidebar } from "./js/sidebar.js"; import { initTheme } from "./js/theme.js";
+    import { apiRequest } from "./js/api.js"; import { showToast, setButtonLoading } from "./js/ui.js";
+    initTheme(); initSidebar();
+
+    window.generateCode = async function() {
+      const input = document.getElementById("instructionInput").value.trim();
+      const out = document.getElementById("codeOutput");
+      const btn = document.getElementById("genBtn");
+      if (!input) return showToast("Enter a description.", "warning");
+      setButtonLoading(btn, true);
+      out.textContent = "⏳ Generating code...";
+      try { const data = await apiRequest("/generate", { prompt: input }); out.textContent = data.code || "No code generated."; }
+      catch { out.textContent = "Failed to generate code."; }
+      finally { setButtonLoading(btn, false, "Generate Code"); }
+    };
+  </script>
+</body>
+</html>

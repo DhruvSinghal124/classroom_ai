@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#0f172a] text-white">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Help & Support – Classroom.AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    }
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .help-card {
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+    }
+    .help-card:hover {
+      transform: translateY(-2px);
+      border-left-color: #3b82f6;
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+    }
+    .notification-toast {
+      animation: slideIn 0.5s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 12px;
+      margin: 8px 0;
+    }
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: #3b82f6;
+      border-radius: 50%;
+      animation: typingAnimation 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes typingAnimation {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-10px); }
+    }
+    .chat-message {
+      animation: messageSlideIn 0.3s ease-out;
+      max-width: 80%;
+    }
+    @keyframes messageSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .faq-item {
+      transition: all 0.3s ease;
+    }
+    .faq-item.active {
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 12px;
+    }
+    .char-counter {
+      transition: color 0.3s ease;
+    }
+    .char-counter.warning {
+      color: #f59e0b;
+    }
+    .char-counter.danger {
+      color: #ef4444;
+    }
+    .priority-badge {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
+</head>
+
+<body class="bg-[#0f172a] text-white min-h-screen px-4 py-8 relative overflow-x-hidden">
+
+  <!-- Animated Background Elements -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+    <div class="absolute top-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
+    <div class="absolute bottom-40 right-40 w-60 h-60 bg-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style="animation-delay: 4s;"></div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="notification" class="fixed top-4 right-4 z-50 hidden">
+    <div class="notification-toast bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+      <span id="notification-text">Message sent successfully!</span>
+    </div>
+  </div>
+
+  <!-- Back Button -->
+  <a href="settings.html" class="relative z-10 inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-lg font-medium ml-4 mb-8 transition-all duration-300 hover:translate-x-1">
+    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    Back to Settings
+  </a>
+
+  <!-- Main Container -->
+  <div class="relative z-10 max-w-7xl mx-auto">
+    
+    <!-- Header Section -->
+    <div class="glass-effect p-8 rounded-2xl shadow-2xl mb-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+            <i data-lucide="help-circle" class="w-8 h-8 text-white"></i>
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Help & Support
+            </h1>
+            <p class="text-gray-400 mt-1">Get assistance and send feedback to improve your experience</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <span class="text-green-400 text-sm font-medium">Support Online</span>
+          </div>
+          <p class="text-xs text-gray-400">Response time: ~2 minutes</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <button id="quickBug" class="help-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="bug" class="w-8 h-8 text-red-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Report Bug</h3>
+        <p class="text-sm text-gray-400">Found an issue?</p>
+      </button>
+
+      <button id="quickFeature" class="help-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="lightbulb" class="w-8 h-8 text-yellow-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Feature Request</h3>
+        <p class="text-sm text-gray-400">Suggest improvements</p>
+      </button>
+
+      <button id="quickQuestion" class="help-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="message-circle-question" class="w-8 h-8 text-blue-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Ask Question</h3>
+        <p class="text-sm text-gray-400">Need help?</p>
+      </button>
+
+      <button id="quickCompliment" class="help-card glass-effect p-6 rounded-xl text-left hover:bg-[#0f172a] transition-colors">
+        <i data-lucide="heart" class="w-8 h-8 text-green-400 mb-3"></i>
+        <h3 class="font-semibold mb-1">Compliment</h3>
+        <p class="text-sm text-gray-400">Share positive feedback</p>
+      </button>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid lg:grid-cols-3 gap-8">
+      
+      <!-- Feedback Form -->
+      <div class="lg:col-span-2 glass-effect p-8 rounded-2xl shadow-2xl">
+        <div class="flex items-center gap-3 mb-6">
+          <i data-lucide="message-square" class="w-6 h-6 text-blue-400"></i>
+          <h2 class="text-xl font-bold text-blue-300">Send Feedback</h2>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Category Selection -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-300">Category</label>
+            <select id="category" class="w-full p-4 rounded-xl bg-[#0f172a] text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <option value="general">General Feedback</option>
+              <option value="bug">Bug Report</option>
+              <option value="feature">Feature Request</option>
+              <option value="question">Question</option>
+              <option value="compliment">Compliment</option>
+              <option value="complaint">Complaint</option>
+            </select>
+          </div>
+
+          <!-- Priority Level -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-300">Priority Level</label>
+            <div class="flex gap-2">
+              <button type="button" class="priority-btn px-4 py-2 rounded-lg border border-green-600 text-green-400 hover:bg-green-600 hover:text-white transition-colors" data-priority="low">
+                <i data-lucide="minus-circle" class="w-4 h-4 inline mr-1"></i>Low
+              </button>
+              <button type="button" class="priority-btn px-4 py-2 rounded-lg border border-yellow-600 text-yellow-400 hover:bg-yellow-600 hover:text-white transition-colors active" data-priority="medium">
+                <i data-lucide="alert-circle" class="w-4 h-4 inline mr-1"></i>Medium
+              </button>
+              <button type="button" class="priority-btn px-4 py-2 rounded-lg border border-red-600 text-red-400 hover:bg-red-600 hover:text-white transition-colors" data-priority="high">
+                <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>High
+              </button>
+            </div>
+            <input type="hidden" id="priority" value="medium">
+          </div>
+
+          <!-- Subject Line -->
+          <div>
+            <label for="subject" class="block text-sm font-medium mb-2 text-gray-300">Subject</label>
+            <input id="subject" type="text" placeholder="Brief description of your message..."
+              class="w-full p-4 rounded-xl bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+          </div>
+
+          <!-- Message Area -->
+          <div>
+            <label for="feedback" class="block text-sm font-medium mb-2 text-gray-300">Your Message</label>
+            <div class="relative">
+              <textarea id="feedback" rows="6" placeholder="Share your thoughts, report issues, or ask questions..."
+                class="w-full p-4 rounded-xl bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"></textarea>
+              <div class="absolute bottom-3 right-3 flex items-center gap-2">
+                <span id="charCounter" class="char-counter text-xs text-gray-400">0/1000</span>
+                <button type="button" id="voiceInput" class="text-gray-400 hover:text-blue-400 transition-colors" title="Voice Input">
+                  <i data-lucide="mic" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- File Attachment -->
+          <div>
+            <label class="block text-sm font-medium mb-2 text-gray-300">Attachments (Optional)</label>
+            <div class="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+              <input type="file" id="attachment" multiple accept="image/*,.pdf,.doc,.docx" class="hidden">
+              <label for="attachment" class="cursor-pointer">
+                <i data-lucide="upload" class="w-8 h-8 text-gray-400 mx-auto mb-2"></i>
+                <p class="text-gray-400">Click to upload files or drag and drop</p>
+                <p class="text-xs text-gray-500 mt-1">PNG, JPG, PDF, DOC (Max 10MB)</p>
+              </label>
+            </div>
+            <div id="fileList" class="mt-2 space-y-2"></div>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label for="contactEmail" class="block text-sm font-medium mb-2 text-gray-300">Contact Email</label>
+              <input id="contactEmail" type="email" placeholder="your@email.com"
+                class="w-full p-3 rounded-xl bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            </div>
+            <div>
+              <label for="expectReply" class="flex items-center space-x-3 mt-8">
+                <input type="checkbox" id="expectReply" class="accent-blue-500" checked />
+                <span class="text-sm text-gray-300">Expect a reply</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Send Button -->
+          <div class="flex gap-4">
+            <button id="send" class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+              <div class="flex items-center justify-center gap-2">
+                <i data-lucide="send" class="w-5 h-5"></i>
+                <span id="sendText">Send Message</span>
+              </div>
+            </button>
+            <button id="saveDraft" class="px-6 py-4 border border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white font-semibold rounded-xl transition-all">
+              <i data-lucide="save" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help Resources -->
+      <div class="space-y-8">
+        
+        <!-- FAQ Section -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="book-open" class="w-6 h-6 text-purple-400"></i>
+            <h3 class="text-lg font-bold text-purple-300">Frequently Asked</h3>
+          </div>
+
+          <div class="space-y-3">
+            <div class="faq-item p-3 rounded-lg cursor-pointer hover:bg-[#0f172a] transition-colors" data-faq="1">
+              <div class="flex items-center justify-between">
+                <p class="font-medium text-sm">How to reset password?</p>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+              </div>
+              <div class="faq-answer hidden mt-2 text-sm text-gray-400">
+                Go to login page → Click "Forgot Password" → Enter your email → Check your inbox for reset link.
+              </div>
+            </div>
+
+            <div class="faq-item p-3 rounded-lg cursor-pointer hover:bg-[#0f172a] transition-colors" data-faq="2">
+              <div class="flex items-center justify-between">
+                <p class="font-medium text-sm">How to change profile picture?</p>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+              </div>
+              <div class="faq-answer hidden mt-2 text-sm text-gray-400">
+                Settings → Account → Avatar → Upload new image → Save changes.
+              </div>
+            </div>
+
+            <div class="faq-item p-3 rounded-lg cursor-pointer hover:bg-[#0f172a] transition-colors" data-faq="3">
+              <div class="flex items-center justify-between">
+                <p class="font-medium text-sm">How to enable notifications?</p>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+              </div>
+              <div class="faq-answer hidden mt-2 text-sm text-gray-400">
+                Settings → Notifications → Enable desired notification types → Save preferences.
+              </div>
+            </div>
+
+            <div class="faq-item p-3 rounded-lg cursor-pointer hover:bg-[#0f172a] transition-colors" data-faq="4">
+              <div class="flex items-center justify-between">
+                <p class="font-medium text-sm">Data backup and export?</p>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+              </div>
+              <div class="faq-answer hidden mt-2 text-sm text-gray-400">
+                Privacy Settings → Download My Data → Request backup → Receive email with download link.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Chat -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="message-circle" class="w-6 h-6 text-green-400"></i>
+            <h3 class="text-lg font-bold text-green-300">Live Chat</h3>
+            <div class="ml-auto">
+              <span class="px-2 py-1 bg-green-600 text-white text-xs rounded-full">Online</span>
+            </div>
+          </div>
+
+          <div id="chatMessages" class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+            <div class="chat-message flex">
+              <div class="bg-blue-600 text-white px-4 py-2 rounded-lg rounded-bl-none">
+                <p class="text-sm">👋 Hi! How can I help you today?</p>
+                <p class="text-xs opacity-75 mt-1">Support Bot • Just now</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+            <span class="text-sm text-gray-400">Support is typing...</span>
+          </div>
+
+          <div class="flex gap-2">
+            <input id="chatInput" type="text" placeholder="Type your message..."
+              class="flex-1 p-3 rounded-lg bg-[#0f172a] text-white placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400" />
+            <button id="sendChat" class="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Contact Methods -->
+        <div class="glass-effect p-6 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <i data-lucide="phone" class="w-6 h-6 text-blue-400"></i>
+            <h3 class="text-lg font-bold text-blue-300">Other Ways to Reach Us</h3>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-[#0f172a] transition-colors">
+              <i data-lucide="mail" class="w-5 h-5 text-blue-400"></i>
+              <div>
+                <p class="font-medium">Email Support</p>
+                <p class="text-sm text-gray-400">support@classroom.ai</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-[#0f172a] transition-colors">
+              <i data-lucide="phone" class="w-5 h-5 text-green-400"></i>
+              <div>
+                <p class="font-medium">Phone Support</p>
+                <p class="text-sm text-gray-400">+1 (555) 123-4567</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-[#0f172a] transition-colors">
+              <i data-lucide="clock" class="w-5 h-5 text-purple-400"></i>
+              <div>
+                <p class="font-medium">Business Hours</p>
+                <p class="text-sm text-gray-400">Mon-Fri: 9AM-6PM EST</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Feedback -->
+    <div class="mt-8 glass-effect p-8 rounded-2xl shadow-2xl">
+      <div class="flex items-center gap-3 mb-6">
+        <i data-lucide="history" class="w-6 h-6 text-yellow-400"></i>
+        <h3 class="text-xl font-bold text-yellow-300">Your Recent Feedback</h3>
+      </div>
+      <div id="recentFeedback" class="space-y-4">
+        <p class="text-gray-400 text-center py-8">No recent feedback found. Your messages will appear here.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Get DOM elements
+    const elements = {
+      category: document.getElementById("category"),
+      priority: document.getElementById("priority"),
+      subject: document.getElementById("subject"),
+      feedback: document.getElementById("feedback"),
+      contactEmail: document.getElementById("contactEmail"),
+      expectReply: document.getElementById("expectReply"),
+      send: document.getElementById("send"),
+      sendText: document.getElementById("sendText"),
+      saveDraft: document.getElementById("saveDraft"),
+      charCounter: document.getElementById("charCounter"),
+      attachment: document.getElementById("attachment"),
+      fileList: document.getElementById("fileList"),
+      notification: document.getElementById("notification"),
+      notificationText: document.getElementById("notification-text"),
+      recentFeedback: document.getElementById("recentFeedback"),
+      chatInput: document.getElementById("chatInput"),
+      sendChat: document.getElementById("sendChat"),
+      chatMessages: document.getElementById("chatMessages"),
+      typingIndicator: document.getElementById("typingIndicator"),
+      voiceInput: document.getElementById("voiceInput")
+    };
+
+    let attachedFiles = [];
+    let feedbackHistory = [];
+
+    // Show notification function
+    function showNotification(message, type = 'success') {
+      elements.notificationText.textContent = message;
+      elements.notification.className = `fixed top-4 right-4 z-50 notification-toast px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 ${
+        type === 'success' ? 'bg-green-600' : type === 'warning' ? 'bg-yellow-600' : 'bg-red-600'
+      } text-white`;
+      elements.notification.classList.remove('hidden');
+      setTimeout(() => {
+        elements.notification.classList.add('hidden');
+      }, 3000);
+    }
+
+    // Character counter
+    elements.feedback.addEventListener('input', () => {
+      const count = elements.feedback.value.length;
+      const maxLength = 1000;
+      elements.charCounter.textContent = `${count}/${maxLength}`;
+      
+      elements.charCounter.className = 'char-counter text-xs';
+      if (count > maxLength * 0.8) {
+        elements.charCounter.classList.add('warning');
+      }
+      if (count > maxLength * 0.95) {
+        elements.charCounter.classList.remove('warning');
+        elements.charCounter.classList.add('danger');
+      }
+      
+      if (count > maxLength) {
+        elements.feedback.value = elements.feedback.value.substring(0, maxLength);
+        elements.charCounter.textContent = `${maxLength}/${maxLength}`;
+      }
+    });
+
+    // Priority selection
+    document.querySelectorAll('.priority-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active', 'bg-green-600', 'bg-yellow-600', 'bg-red-600', 'text-white'));
+        btn.classList.add('active');
+        const priority = btn.dataset.priority;
+        elements.priority.value = priority;
+        
+        if (priority === 'low') btn.classList.add('bg-green-600', 'text-white');
+        else if (priority === 'medium') btn.classList.add('bg-yellow-600', 'text-white');
+        else btn.classList.add('bg-red-600', 'text-white');
+      });
+    });
+
+    // Quick action buttons
+    document.getElementById('quickBug').addEventListener('click', () => {
+      elements.category.value = 'bug';
+      elements.subject.value = 'Bug Report: ';
+      elements.feedback.focus();
+      document.querySelector('[data-priority="high"]').click();
+    });
+
+    document.getElementById('quickFeature').addEventListener('click', () => {
+      elements.category.value = 'feature';
+      elements.subject.value = 'Feature Request: ';
+      elements.feedback.focus();
+    });
+
+    document.getElementById('quickQuestion').addEventListener('click', () => {
+      elements.category.value = 'question';
+      elements.subject.value = 'Question: ';
+      elements.feedback.focus();
+    });
+
+    document.getElementById('quickCompliment').addEventListener('click', () => {
+      elements.category.value = 'compliment';
+      elements.subject.value = 'Compliment: ';
+      elements.feedback.focus();
+    });
+
+    // File attachment handling
+    elements.attachment.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        if (file.size <= 10 * 1024 * 1024) { // 10MB limit
+          attachedFiles.push(file);
+          addFileToList(file);
+        } else {
+          showNotification(`File ${file.name} is too large (max 10MB)`, 'error');
+        }
+      });
+    });
+
+    function addFileToList(file) {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'flex items-center justify-between p-2 bg-[#0f172a] rounded-lg';
+      fileItem.innerHTML = `
+        <div class="flex items-center gap-2">
+          <i data-lucide="file" class="w-4 h-4 text-blue-400"></i>
+          <span class="text-sm">${file.name}</span>
+          <span class="text-xs text-gray-400">(${(file.size / 1024).toFixed(1)}KB)</span>
+        </div>
+        <button class="text-red-400 hover:text-red-300" onclick="removeFile('${file.name}')">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      `;
+      elements.fileList.appendChild(fileItem);
+      lucide.createIcons();
+    }
+
+    function removeFile(filename) {
+      attachedFiles = attachedFiles.filter(file => file.name !== filename);
+      const fileItems = elements.fileList.children;
+      for (let item of fileItems) {
+        if (item.textContent.includes(filename)) {
+          item.remove();
+          break;
+        }
+      }
+    }
+
+    // FAQ functionality
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const answer = item.querySelector('.faq-answer');
+        const chevron = item.querySelector('[data-lucide="chevron-down"]');
+        
+        if (answer.classList.contains('hidden')) {
+          answer.classList.remove('hidden');
+          item.classList.add('active');
+          chevron.style.transform = 'rotate(180deg)';
+        } else {
+          answer.classList.add('hidden');
+          item.classList.remove('active');
+          chevron.style.transform = 'rotate(0deg)';
+        }
+      });
+    });
+
+    // Voice input functionality
+    elements.voiceInput.addEventListener('click', () => {
+      if ('speechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = () => {
+          elements.voiceInput.classList.add('text-red-400');
+          showNotification('Listening...', 'info');
+        };
+        
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          elements.feedback.value += (elements.feedback.value ? ' ' : '') + transcript;
+          elements.feedback.dispatchEvent(new Event('input'));
+        };
+        
+        recognition.onerror = () => {
+          showNotification('Voice recognition failed', 'error');
+        };
+        
+        recognition.onend = () => {
+          elements.voiceInput.classList.remove('text-red-400');
+        };
+        
+        recognition.start();
+      } else {
+        showNotification('Voice recognition not supported', 'error');
+      }
+    });
+
+    // Send feedback functionality
+    elements.send.addEventListener('click', async () => {
+      if (!elements.subject.value.trim() || !elements.feedback.value.trim()) {
+        showNotification('Please fill in subject and message', 'error');
+        return;
+      }
+
+      // Show loading state
+      elements.send.disabled = true;
+      elements.sendText.textContent = 'Sending...';
+      elements.send.classList.add('opacity-50');
+
+      // Simulate sending (replace with actual API call)
+      setTimeout(() => {
+        const feedbackData = {
+          id: Date.now(),
+          category: elements.category.value,
+          priority: elements.priority.value,
+          subject: elements.subject.value,
+          message: elements.feedback.value,
+          email: elements.contactEmail.value,
+          expectReply: elements.expectReply.checked,
+          attachments: attachedFiles.length,
+          timestamp: new Date().toLocaleString()
+        };
+
+        feedbackHistory.unshift(feedbackData);
+        updateRecentFeedback();
+        
+        // Reset form
+        elements.subject.value = '';
+        elements.feedback.value = '';
+        elements.contactEmail.value = '';
+        elements.charCounter.textContent = '0/1000';
+        attachedFiles = [];
+        elements.fileList.innerHTML = '';
+        
+        // Reset button
+        elements.send.disabled = false;
+        elements.sendText.textContent = 'Send Message';
+        elements.send.classList.remove('opacity-50');
+        
+        showNotification('Feedback sent successfully!');
+      }, 2000);
+    });
+
+    // Save draft functionality
+    elements.saveDraft.addEventListener('click', () => {
+      const draftData = {
+        category: elements.category.value,
+        priority: elements.priority.value,
+        subject: elements.subject.value,
+        message: elements.feedback.value,
+        email: elements.contactEmail.value,
+        expectReply: elements.expectReply.checked,
+        timestamp: new Date().toLocaleString()
+      };
+      
+      const drafts = JSON.parse(localStorage.getItem('helpDrafts') || '[]');
+      drafts.push(draftData);
+      localStorage.setItem('helpDrafts', JSON.stringify(drafts));
+      
+      showNotification('Draft saved successfully!');
+    });
+
+    // Chat functionality
+    const chatResponses = [
+      "I understand your concern. Let me help you with that.",
+      "That's a great question! Here's what I can tell you...",
+      "I see what you mean. Have you tried checking the FAQ section?",
+      "Thanks for reaching out! I'll connect you with a specialist.",
+      "Let me look into that for you. One moment please...",
+      "I'd be happy to help! Can you provide more details?",
+      "That's definitely something we can resolve. Let me guide you through it."
+    ];
+
+    elements.sendChat.addEventListener('click', sendChatMessage);
+    elements.chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendChatMessage();
+      }
+    });
+
+    function sendChatMessage() {
+      const message = elements.chatInput.value.trim();
+      if (!message) return;
+
+      // Add user message
+      addChatMessage(message, 'user');
+      elements.chatInput.value = '';
+
+      // Show typing indicator
+      elements.typingIndicator.style.display = 'flex';
+
+      // Simulate bot response
+      setTimeout(() => {
+        elements.typingIndicator.style.display = 'none';
+        const response = chatResponses[Math.floor(Math.random() * chatResponses.length)];
+        addChatMessage(response, 'bot');
+      }, 1500);
+    }
+
+    function addChatMessage(message, sender) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `chat-message flex ${sender === 'user' ? 'justify-end' : ''}`;
+      
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      messageDiv.innerHTML = `
+        <div class="${sender === 'user' ? 'bg-green-600' : 'bg-blue-600'} text-white px-4 py-2 rounded-lg ${sender === 'user' ? 'rounded-br-none' : 'rounded-bl-none'}">
+          <p class="text-sm">${message}</p>
+          <p class="text-xs opacity-75 mt-1">${sender === 'user' ? 'You' : 'Support Bot'} • ${timestamp}</p>
+        </div>
+      `;
+      
+      elements.chatMessages.appendChild(messageDiv);
+      elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+    }
+
+    // Update recent feedback display
+    function updateRecentFeedback() {
+      if (feedbackHistory.length === 0) {
+        elements.recentFeedback.innerHTML = '<p class="text-gray-400 text-center py-8">No recent feedback found. Your messages will appear here.</p>';
+        return;
+      }
+
+      elements.recentFeedback.innerHTML = '';
+      feedbackHistory.slice(0, 5).forEach(feedback => {
+        const feedbackItem = document.createElement('div');
+        feedbackItem.className = 'p-4 bg-[#0f172a] rounded-lg border border-gray-700';
+        
+        const priorityColor = feedback.priority === 'high' ? 'text-red-400' : 
+                             feedback.priority === 'medium' ? 'text-yellow-400' : 'text-green-400';
+        
+        feedbackItem.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-1 ${priorityColor} bg-opacity-20 rounded text-xs font-medium">${feedback.category}</span>
+              <span class="px-2 py-1 ${priorityColor} bg-opacity-20 rounded text-xs">${feedback.priority}</span>
+            </div>
+            <span class="text-xs text-gray-400">${feedback.timestamp}</span>
+          </div>
+          <h4 class="font-medium mb-1">${feedback.subject}</h4>
+          <p class="text-sm text-gray-400 line-clamp-2">${feedback.message}</p>
+          ${feedback.attachments > 0 ? `<p class="text-xs text-blue-400 mt-2">${feedback.attachments} attachment(s)</p>` : ''}
+        `;
+        
+        elements.recentFeedback.appendChild(feedbackItem);
+      });
+    }
+
+    // Load saved drafts on page load
+    window.addEventListener('load', () => {
+      const drafts = JSON.parse(localStorage.getItem('helpDrafts') || '[]');
+      if (drafts.length > 0) {
+        showNotification(`${drafts.length} saved draft(s) available`, 'info');
+      }
+    });
+
+    // Drag and drop file upload
+    const dropZone = document.querySelector('label[for="attachment"]').parentElement;
+    
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-blue-400');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-blue-400');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-blue-400');
+      
+      const files = Array.from(e.dataTransfer.files);
+      files.forEach(file => {
+        if (file.size <= 10 * 1024 * 1024) {
+          attachedFiles.push(file);
+          addFileToList(file);
+        } else {
+          showNotification(`File ${file.name} is too large (max 10MB)`, 'error');
+        }
+      });
+    });
+
+    // Auto-save draft functionality
+    let autoSaveTimer;
+    function setupAutoSave() {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        if (elements.subject.value.trim() || elements.feedback.value.trim()) {
+          const draftData = {
+            category: elements.category.value,
+            priority: elements.priority.value,
+            subject: elements.subject.value,
+            message: elements.feedback.value,
+            email: elements.contactEmail.value,
+            expectReply: elements.expectReply.checked,
+            timestamp: new Date().toLocaleString(),
+            autoSaved: true
+          };
+          
+          let drafts = JSON.parse(localStorage.getItem('helpDrafts') || '[]');
+          
+          // Remove previous auto-saved draft
+          drafts = drafts.filter(draft => !draft.autoSaved);
+          
+          // Add new auto-saved draft
+          drafts.push(draftData);
+          localStorage.setItem('helpDrafts', JSON.stringify(drafts));
+        }
+      }, 5000); // Auto-save after 5 seconds of inactivity
+    }
+
+    // Set up auto-save listeners
+    elements.subject.addEventListener('input', setupAutoSave);
+    elements.feedback.addEventListener('input', setupAutoSave);
+    elements.category.addEventListener('change', setupAutoSave);
+
+    // Initialize page
+    updateRecentFeedback();
+    
+    // Add some sample data for demonstration
+    setTimeout(() => {
+      feedbackHistory.push({
+        id: 1,
+        category: 'question',
+        priority: 'medium',
+        subject: 'How to export my data?',
+        message: 'I need to export all my classroom data for backup purposes. Can you guide me through the process?',
+        email: 'user@example.com',
+        expectReply: true,
+        attachments: 0,
+        timestamp: '2025-08-01 14:30:00'
+      });
+      updateRecentFeedback();
+    }, 1000);
+  </script>
+
+</body>
+</html>

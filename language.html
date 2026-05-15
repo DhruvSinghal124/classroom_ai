@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#0f172a] text-white">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App Language – Classroom.AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .language-option {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .language-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+        
+        .language-option.selected {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: 2px solid #60a5fa;
+        }
+        
+        .language-option.selected::after {
+            content: '';
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>') no-repeat center;
+            background-size: 20px 20px;
+        }
+        
+        .language-option.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .flag-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .notification-toast {
+            animation: slideInRight 0.5s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .language-change-animation {
+            animation: languageChange 0.8s ease-in-out;
+        }
+        
+        @keyframes languageChange {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .preview-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-white min-h-screen relative p-8">
+
+    <!-- Notification Toast -->
+    <div id="notification" class="fixed top-4 right-4 z-50 hidden">
+        <div class="notification-toast bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            <span id="notification-text">Language changed successfully!</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="max-w-4xl mx-auto">
+        <a href="settings.html" class="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-lg font-medium mb-8 transition-all duration-300 hover:translate-x-1">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            <span id="back-text">Back to Settings</span>
+        </a>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Language Selection -->
+            <div class="lg:col-span-2">
+                <div class="bg-[#1e293b] rounded-2xl shadow-2xl p-8">
+                    <div class="flex items-center gap-3 mb-6">
+                        <i data-lucide="globe" class="w-8 h-8 text-blue-400"></i>
+                        <div>
+                            <h1 class="text-3xl font-bold text-blue-400" id="page-title">App Language</h1>
+                            <p class="text-gray-300 mt-1" id="page-subtitle">Select your preferred language for the application</p>
+                        </div>
+                    </div>
+
+                    <div id="language-options" class="space-y-4">
+                        <button data-lang="en" class="language-option w-full flex items-center gap-4 bg-[#2d3a4b] hover:bg-[#334155] p-5 rounded-xl shadow transition text-lg font-medium text-left">
+                            <span class="flag-icon">🇺🇸</span>
+                            <div class="flex-1">
+                                <span class="block font-semibold">English</span>
+                                <span class="text-sm text-gray-400">Default language</span>
+                            </div>
+                        </button>
+                        
+                        <button data-lang="hi" class="language-option w-full flex items-center gap-4 bg-[#2d3a4b] hover:bg-[#334155] p-5 rounded-xl shadow transition text-lg font-medium text-left">
+                            <span class="flag-icon">🇮🇳</span>
+                            <div class="flex-1">
+                                <span class="block font-semibold">हिन्दी (Hindi)</span>
+                                <span class="text-sm text-gray-400">भारतीय भाषा</span>
+                            </div>
+                        </button>
+                        
+                        <button data-lang="fr" class="language-option w-full flex items-center gap-4 bg-[#2d3a4b] hover:bg-[#334155] p-5 rounded-xl shadow transition text-lg font-medium text-left">
+                            <span class="flag-icon">🇫🇷</span>
+                            <div class="flex-1">
+                                <span class="block font-semibold">Français (French)</span>
+                                <span class="text-sm text-gray-400">Langue française</span>
+                            </div>
+                        </button>
+                        
+                        <button data-lang="es" class="language-option w-full flex items-center gap-4 bg-[#2d3a4b] hover:bg-[#334155] p-5 rounded-xl shadow transition text-lg font-medium text-left">
+                            <span class="flag-icon">🇪🇸</span>
+                            <div class="flex-1">
+                                <span class="block font-semibold">Español (Spanish)</span>
+                                <span class="text-sm text-gray-400">Idioma español</span>
+                            </div>
+                        </button>
+                        
+                        <button data-lang="de" class="language-option w-full flex items-center gap-4 bg-[#2d3a4b] hover:bg-[#334155] p-5 rounded-xl shadow transition text-lg font-medium text-left">
+                            <span class="flag-icon">🇩🇪</span>
+                            <div class="flex-1">
+                                <span class="block font-semibold">Deutsch (German)</span>
+                                <span class="text-sm text-gray-400">Deutsche Sprache</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div class="mt-8 p-4 bg-blue-600/20 border border-blue-500/30 rounded-xl">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="info" class="w-5 h-5 text-blue-400"></i>
+                            <p class="text-sm text-blue-100" id="info-text">
+                                Language changes will be applied immediately across the entire application.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview & Status -->
+            <div class="space-y-6">
+                <!-- Current Language Preview -->
+                <div class="preview-card rounded-2xl p-6 shadow-2xl">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i data-lucide="eye" class="w-6 h-6 text-purple-400"></i>
+                        <h3 class="text-lg font-bold text-purple-300" id="preview-title">Language Preview</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3 bg-[#0f172a] rounded-lg">
+                            <p class="text-sm text-gray-400" id="preview-label">Current Selection:</p>
+                            <p class="font-semibold text-white" id="current-language">English</p>
+                        </div>
+                        
+                        <div class="p-3 bg-[#0f172a] rounded-lg">
+                            <p class="text-sm text-gray-400" id="sample-label">Sample Text:</p>
+                            <p class="font-medium text-blue-300" id="sample-text">Welcome to Classroom.AI</p>
+                        </div>
+                        
+                        <div class="p-3 bg-[#0f172a] rounded-lg">
+                            <p class="text-sm text-gray-400" id="date-label">Date Format:</p>
+                            <p class="font-medium text-green-300" id="date-format">MM/DD/YYYY</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Language Statistics -->
+                <div class="preview-card rounded-2xl p-6 shadow-2xl">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i data-lucide="bar-chart-3" class="w-6 h-6 text-green-400"></i>
+                        <h3 class="text-lg font-bold text-green-300" id="stats-title">Language Stats</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400" id="coverage-label">Translation Coverage:</span>
+                            <span class="font-semibold text-green-400" id="coverage-percent">98%</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400" id="last-updated-label">Last Updated:</span>
+                            <span class="font-medium text-blue-300" id="last-updated">Now</span>
+                        </div>
+                        
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div id="progress-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 98%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="preview-card rounded-2xl p-6 shadow-2xl">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i data-lucide="zap" class="w-6 h-6 text-yellow-400"></i>
+                        <h3 class="text-lg font-bold text-yellow-300" id="actions-title">Quick Actions</h3>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button onclick="detectSystemLanguage()" class="w-full flex items-center gap-3 p-3 bg-[#0f172a] hover:bg-[#1e293b] rounded-lg transition-colors text-left">
+                            <i data-lucide="smartphone" class="w-4 h-4 text-blue-400"></i>
+                            <span class="text-sm" id="detect-system">Detect System Language</span>
+                        </button>
+                        
+                        <button onclick="resetToDefault()" class="w-full flex items-center gap-3 p-3 bg-[#0f172a] hover:bg-[#1e293b] rounded-lg transition-colors text-left">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 text-gray-400"></i>
+                            <span class="text-sm" id="reset-default">Reset to Default</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="status-message" class="fixed bottom-4 right-4 hidden"></div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+
+    <script>
+        // Language translations
+        const translations = {
+            en: {
+                'back-text': 'Back to Settings',
+                'page-title': 'App Language',
+                'page-subtitle': 'Select your preferred language for the application',
+                'info-text': 'Language changes will be applied immediately across the entire application.',
+                'preview-title': 'Language Preview',
+                'preview-label': 'Current Selection:',
+                'current-language': 'English',
+                'sample-label': 'Sample Text:',
+                'sample-text': 'Welcome to Classroom.AI',
+                'date-label': 'Date Format:',
+                'date-format': 'MM/DD/YYYY',
+                'stats-title': 'Language Stats',
+                'coverage-label': 'Translation Coverage:',
+                'last-updated-label': 'Last Updated:',
+                'actions-title': 'Quick Actions',
+                'detect-system': 'Detect System Language',
+                'reset-default': 'Reset to Default',
+                'notification': 'Language changed to English successfully!'
+            },
+            hi: {
+                'back-text': 'सेटिंग्स पर वापस जाएं',
+                'page-title': 'ऐप भाषा',
+                'page-subtitle': 'एप्लिकेशन के लिए अपनी पसंदीदा भाषा चुनें',
+                'info-text': 'भाषा परिवर्तन तुरंत पूरे एप्लिकेशन में लागू हो जाएंगे।',
+                'preview-title': 'भाषा पूर्वावलोकन',
+                'preview-label': 'वर्तमान चयन:',
+                'current-language': 'हिन्दी',
+                'sample-label': 'नमूना पाठ:',
+                'sample-text': 'Classroom.AI में आपका स्वागत है',
+                'date-label': 'दिनांक प्रारूप:',
+                'date-format': 'DD/MM/YYYY',
+                'stats-title': 'भाषा आंकड़े',
+                'coverage-label': 'अनुवाद कवरेज:',
+                'last-updated-label': 'अंतिम अपडेट:',
+                'actions-title': 'त्वरित क्रियाएं',
+                'detect-system': 'सिस्टम भाषा का पता लगाएं',
+                'reset-default': 'डिफ़ॉल्ट पर रीसेट करें',
+                'notification': 'भाषा सफलतापूर्वक हिन्दी में बदल गई!'
+            },
+            fr: {
+                'back-text': 'Retour aux paramètres',
+                'page-title': 'Langue de l\'application',
+                'page-subtitle': 'Sélectionnez votre langue préférée pour l\'application',
+                'info-text': 'Les changements de langue seront appliqués immédiatement dans toute l\'application.',
+                'preview-title': 'Aperçu de la langue',
+                'preview-label': 'Sélection actuelle:',
+                'current-language': 'Français',
+                'sample-label': 'Texte d\'exemple:',
+                'sample-text': 'Bienvenue sur Classroom.AI',
+                'date-label': 'Format de date:',
+                'date-format': 'DD/MM/YYYY',
+                'stats-title': 'Statistiques linguistiques',
+                'coverage-label': 'Couverture de traduction:',
+                'last-updated-label': 'Dernière mise à jour:',
+                'actions-title': 'Actions rapides',
+                'detect-system': 'Détecter la langue du système',
+                'reset-default': 'Réinitialiser par défaut',
+                'notification': 'Langue changée en français avec succès!'
+            },
+            es: {
+                'back-text': 'Volver a configuración',
+                'page-title': 'Idioma de la aplicación',
+                'page-subtitle': 'Selecciona tu idioma preferido para la aplicación',
+                'info-text': 'Los cambios de idioma se aplicarán inmediatamente en toda la aplicación.',
+                'preview-title': 'Vista previa del idioma',
+                'preview-label': 'Selección actual:',
+                'current-language': 'Español',
+                'sample-label': 'Texto de muestra:',
+                'sample-text': 'Bienvenido a Classroom.AI',
+                'date-label': 'Formato de fecha:',
+                'date-format': 'DD/MM/YYYY',
+                'stats-title': 'Estadísticas de idioma',
+                'coverage-label': 'Cobertura de traducción:',
+                'last-updated-label': 'Última actualización:',
+                'actions-title': 'Acciones rápidas',
+                'detect-system': 'Detectar idioma del sistema',
+                'reset-default': 'Restablecer por defecto',
+                'notification': '¡Idioma cambiado a español exitosamente!'
+            },
+            de: {
+                'back-text': 'Zurück zu Einstellungen',
+                'page-title': 'App-Sprache',
+                'page-subtitle': 'Wählen Sie Ihre bevorzugte Sprache für die Anwendung',
+                'info-text': 'Sprachänderungen werden sofort in der gesamten Anwendung angewendet.',
+                'preview-title': 'Sprachvorschau',
+                'preview-label': 'Aktuelle Auswahl:',
+                'current-language': 'Deutsch',
+                'sample-label': 'Beispieltext:',
+                'sample-text': 'Willkommen bei Classroom.AI',
+                'date-label': 'Datumsformat:',
+                'date-format': 'DD.MM.YYYY',
+                'stats-title': 'Sprachstatistiken',
+                'coverage-label': 'Übersetzungsabdeckung:',
+                'last-updated-label': 'Zuletzt aktualisiert:',
+                'actions-title': 'Schnellaktionen',
+                'detect-system': 'Systemsprache erkennen',
+                'reset-default': 'Auf Standard zurücksetzen',
+                'notification': 'Sprache erfolgreich auf Deutsch geändert!'
+            }
+        };
+
+        // Global variables
+        let currentSelectedLanguage = 'en';
+        let isLoading = false;
+
+        // DOM elements
+        const languageOptionsContainer = document.getElementById("language-options");
+        const statusMessage = document.getElementById("status-message");
+        const notification = document.getElementById("notification");
+        const notificationText = document.getElementById("notification-text");
+
+        // Show notification function
+        function showNotification(message, type = 'success') {
+            notificationText.textContent = message;
+            notification.className = `fixed top-4 right-4 z-50 notification-toast px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 text-white`;
+            
+            if (type === 'success') {
+                notification.classList.add('bg-green-600');
+            } else if (type === 'error') {
+                notification.classList.add('bg-red-600');
+            } else {
+                notification.classList.add('bg-blue-600');
+            }
+            
+            notification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Update UI language
+        function updateUILanguage(langCode) {
+            const translation = translations[langCode] || translations['en'];
+            
+            // Add animation class
+            document.body.classList.add('language-change-animation');
+            
+            // Update all translatable elements
+            Object.keys(translation).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = translation[key];
+                }
+            });
+            
+            // Update HTML lang attribute
+            document.documentElement.lang = langCode;
+            
+            // Update coverage percentage based on language
+            const coveragePercent = document.getElementById('coverage-percent');
+            const progressBar = document.getElementById('progress-bar');
+            
+            const coverageData = {
+                'en': 100,
+                'hi': 95,
+                'fr': 92,
+                'es': 96,
+                'de': 89
+            };
+            
+            const coverage = coverageData[langCode] || 95;
+            if (coveragePercent) coveragePercent.textContent = `${coverage}%`;
+            if (progressBar) progressBar.style.width = `${coverage}%`;
+            
+            // Update last updated time
+            const lastUpdated = document.getElementById('last-updated');
+            if (lastUpdated) {
+                lastUpdated.textContent = new Date().toLocaleString(langCode);
+            }
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                document.body.classList.remove('language-change-animation');
+            }, 800);
+        }
+
+        // Highlight selected language
+        function highlightSelectedLanguage(langCode) {
+            const buttons = languageOptionsContainer.querySelectorAll('.language-option');
+            buttons.forEach(button => {
+                button.classList.remove('selected');
+                if (button.dataset.lang === langCode) {
+                    button.classList.add('selected');
+                }
+            });
+        }
+
+        // Save language preference
+        function saveLanguagePreference(langCode) {
+            try {
+                localStorage.setItem('appLanguage', langCode);
+                localStorage.setItem('languageUpdated', new Date().toISOString());
+                return true;
+            } catch (error) {
+                console.error('Error saving language preference:', error);
+                return false;
+            }
+        }
+
+        // Load language preference
+        function loadLanguagePreference() {
+            try {
+                const savedLang = localStorage.getItem('appLanguage');
+                return savedLang || 'en';
+            } catch (error) {
+                console.error('Error loading language preference:', error);
+                return 'en';
+            }
+        }
+
+        // Handle language selection
+        async function selectLanguage(langCode) {
+            if (isLoading || langCode === currentSelectedLanguage) {
+                if (langCode === currentSelectedLanguage) {
+                    const translation = translations[langCode] || translations['en'];
+                    showNotification('This is already your selected language.', 'info');
+                }
+                return;
+            }
+
+            isLoading = true;
+            
+            // Disable all buttons temporarily
+            const buttons = languageOptionsContainer.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            });
+
+            try {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Save language preference
+                const saved = saveLanguagePreference(langCode);
+                
+                if (saved) {
+                    // Update current language
+                    currentSelectedLanguage = langCode;
+                    
+                    // Update UI immediately
+                    highlightSelectedLanguage(langCode);
+                    updateUILanguage(langCode);
+                    
+                    // Show success notification
+                    const translation = translations[langCode] || translations['en'];
+                    showNotification(translation.notification, 'success');
+                    
+                    // Simulate broadcasting language change to other components
+                    window.dispatchEvent(new CustomEvent('languageChanged', {
+                        detail: { language: langCode }
+                    }));
+                    
+                } else {
+                    throw new Error('Failed to save language preference');
+                }
+                
+            } catch (error) {
+                console.error("Error updating language:", error);
+                showNotification('Failed to update language. Please try again.', 'error');
+            } finally {
+                // Re-enable all buttons
+                buttons.forEach(btn => {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                });
+                isLoading = false;
+            }
+        }
+
+        // Quick action functions
+        window.detectSystemLanguage = function() {
+            const systemLang = navigator.language.substring(0, 2);
+            const supportedLanguages = ['en', 'hi', 'fr', 'es', 'de'];
+            const detectedLang = supportedLanguages.includes(systemLang) ? systemLang : 'en';
+            
+            if (detectedLang !== currentSelectedLanguage) {
+                selectLanguage(detectedLang);
+            } else {
+                showNotification('System language is already selected.', 'info');
+            }
+        };
+
+        window.resetToDefault = function() {
+            if (confirm('Are you sure you want to reset to English?')) {
+                selectLanguage('en');
+            }
+        };
+
+        // Event listeners
+        languageOptionsContainer.addEventListener("click", async (event) => {
+            const clickedButton = event.target.closest('.language-option');
+            if (!clickedButton) return;
+
+            const selectedLangCode = clickedButton.dataset.lang;
+            await selectLanguage(selectedLangCode);
+        });
+
+        // Listen for language changes from other parts of the app
+        window.addEventListener('languageChanged', (event) => {
+            const newLang = event.detail.language;
+            if (newLang && newLang !== currentSelectedLanguage) {
+                currentSelectedLanguage = newLang;
+                highlightSelectedLanguage(newLang);
+                updateUILanguage(newLang);
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load saved language preference
+            const savedLang = loadLanguagePreference();
+            currentSelectedLanguage = savedLang;
+            
+            // Apply saved language
+            highlightSelectedLanguage(savedLang);
+            updateUILanguage(savedLang);
+            
+            // Show initialization message
+            setTimeout(() => {
+                const translation = translations[savedLang] || translations['en'];
+                showNotification(`Language loaded: ${translation['current-language']}`, 'info');
+            }, 500);
+        });
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            if (event.altKey) {
+                const keyMap = {
+                    '1': 'en',
+                    '2': 'hi',
+                    '3': 'fr',
+                    '4': 'es',
+                    '5': 'de'
+                };
+                
+                const langCode = keyMap[event.key];
+                if (langCode) {
+                    event.preventDefault();
+                    selectLanguage(langCode);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
