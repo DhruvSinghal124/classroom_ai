@@ -5,7 +5,7 @@
  */
 import { showToast } from "./ui.js";
 
-const API_BASE = "http://127.0.0.1:5000";
+const API_BASE = "";
 
 /**
  * Make an API request to the backend.

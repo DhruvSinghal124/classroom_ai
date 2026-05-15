@@ -1,8 +1,12 @@
 """
-Classroom.AI — Backend API Server
-==================================
-Flask server providing AI-powered endpoints for text, code, and language tools.
-Uses Google Gemini 2.5 Flash for all AI operations.
+Classroom.AI — Full-Stack Application Server
+==============================================
+Flask server that serves both:
+  1. The frontend (HTML pages, CSS, JS, images)
+  2. The AI-powered API endpoints
+
+Run with: python app.py
+Access at: http://localhost:5000
 
 Security features:
 - Environment variable configuration (no hardcoded secrets)
@@ -17,7 +21,7 @@ import os
 import logging
 from functools import wraps
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -33,26 +37,32 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dev-fallback-key")
 FLASK_DEBUG = os.getenv("FLASK_DEBUG", "false").lower() == "true"
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5500").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000").split(",")
 RATE_LIMIT = os.getenv("RATE_LIMIT", "30/minute")
 
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY environment variable is required. See .env.example")
 
 # ---------------------------------------------------------------------------
-# App Initialization
+# App Initialization — serve frontend from the project root directory
 # ---------------------------------------------------------------------------
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    static_folder=BASE_DIR,     # Serve static files from the project root
+    static_url_path="",         # No prefix — files available at /css/..., /js/..., etc.
+)
 app.secret_key = FLASK_SECRET_KEY
 
 # CORS — only allow specified origins
 CORS(app, origins=[origin.strip() for origin in ALLOWED_ORIGINS])
 
-# Rate limiting — prevent abuse
+# Rate limiting — prevent abuse (only on API routes, not static files)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=[RATE_LIMIT],
+    default_limits=[],  # No default limit — applied per-route on API endpoints
     storage_uri="memory://",
 )
 
@@ -77,8 +87,8 @@ MAX_REQUEST_SIZE = 1 * 1024 * 1024  # 1 MB
 # ---------------------------------------------------------------------------
 @app.before_request
 def check_request_size():
-    """Reject oversized requests."""
-    if request.content_length and request.content_length > MAX_REQUEST_SIZE:
+    """Reject oversized POST requests."""
+    if request.method == "POST" and request.content_length and request.content_length > MAX_REQUEST_SIZE:
         return jsonify({"error": "Request too large. Maximum size is 1 MB."}), 413
 
 
@@ -133,19 +143,39 @@ def call_gemini(prompt: str, model_name: str = "gemini-2.5-flash") -> str:
         raise
 
 # ---------------------------------------------------------------------------
-# Routes
+# Frontend Routes — Serve HTML pages
 # ---------------------------------------------------------------------------
 
-# Health Check
 @app.route("/")
 @limiter.exempt
-def health():
-    """Health check endpoint."""
-    return jsonify({"status": "API is running", "version": "2.0.0"}), 200
+def serve_index():
+    """Serve the main landing page."""
+    return send_file(os.path.join(BASE_DIR, "index.html"))
 
+
+@app.route("/<path:filename>")
+@limiter.exempt
+def serve_static(filename):
+    """Serve any static file (HTML, CSS, JS, images, etc.)."""
+    # Security: block access to sensitive files
+    blocked = [".env", ".git", "__pycache__", "app.py", "connect_api.py"]
+    if any(filename.startswith(b) or filename == b for b in blocked):
+        return jsonify({"error": "Access denied."}), 403
+
+    file_path = os.path.join(BASE_DIR, filename)
+    if os.path.isfile(file_path):
+        return send_from_directory(BASE_DIR, filename)
+
+    # If no file found, return 404 page or JSON
+    return jsonify({"error": "Page not found."}), 404
+
+# ---------------------------------------------------------------------------
+# API Routes — AI-powered endpoints
+# ---------------------------------------------------------------------------
 
 # Notes Generator
 @app.route("/gemini", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("prompt")
 def notes_generator(clean_text: str = ""):
     try:
@@ -157,6 +187,7 @@ def notes_generator(clean_text: str = ""):
 
 # General AI Response (voice-to-text, image-to-text)
 @app.route("/ai-respond", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("prompt")
 def ai_respond(clean_text: str = ""):
     try:
@@ -168,6 +199,7 @@ def ai_respond(clean_text: str = ""):
 
 # Grammar Checker
 @app.route("/grammar", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("text")
 def grammar(clean_text: str = ""):
     prompt = (
@@ -184,6 +216,7 @@ def grammar(clean_text: str = ""):
 
 # Essay Writer
 @app.route("/essay", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("topic")
 def essay(clean_text: str = ""):
     prompt = (
@@ -198,6 +231,7 @@ def essay(clean_text: str = ""):
 
 # Summarizer
 @app.route("/summarize", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("text")
 def summarize(clean_text: str = ""):
     prompt = (
@@ -214,6 +248,7 @@ def summarize(clean_text: str = ""):
 
 # Question Answering
 @app.route("/ask", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("question")
 def ask_question(clean_text: str = ""):
     """Dedicated endpoint for the Q&A chat tool."""
@@ -232,6 +267,7 @@ def ask_question(clean_text: str = ""):
 
 # Code Generator
 @app.route("/generate", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("prompt")
 def generate(clean_text: str = ""):
     try:
@@ -243,6 +279,7 @@ def generate(clean_text: str = ""):
 
 # Code Explainer
 @app.route("/explain", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("prompt")
 def explain(clean_text: str = ""):
     prompt = f"Explain the following code in simple terms:\n\n{clean_text}"
@@ -255,6 +292,7 @@ def explain(clean_text: str = ""):
 
 # Code Debugger
 @app.route("/debug", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("prompt")
 def debug_code(clean_text: str = ""):
     prompt = (
@@ -270,6 +308,7 @@ def debug_code(clean_text: str = ""):
 
 # Paraphraser
 @app.route("/paragraphize", methods=["POST"])
+@limiter.limit(RATE_LIMIT)
 @validate_text_input("text")
 def paragraphize(clean_text: str = ""):
     prompt = (
@@ -310,6 +349,10 @@ def internal_error(e):
 # Entry Point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
+    logger.info("=" * 50)
+    logger.info("  Classroom.AI Server")
+    logger.info("  http://localhost:5000")
+    logger.info("=" * 50)
     app.run(
         debug=FLASK_DEBUG,
         host="0.0.0.0",
